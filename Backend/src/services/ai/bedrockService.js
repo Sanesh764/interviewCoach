@@ -24,7 +24,7 @@ const parseJsonResponse = (text) => {
 };
 
 // Generic Bedrock invoker supporting Anthropic Claude models
-const callBedrock = async (prompt, systemPrompt = '', maxTokens = 2048, temperature = 0.5) => {
+const callBedrock = async (prompt, systemPrompt = '', maxTokens = 800, temperature = 0.5) => {
   verifyAwsConfiguration('Amazon Bedrock');
 
   const modelId = AWS_CONFIG.bedrockModelId;
@@ -200,39 +200,50 @@ Instructions:
 
   const responseText = await callBedrock(
     prompt,
-    'You are an expert AI interviewer. Output only valid JSON.'
+    'You are an expert AI interviewer. Output only valid JSON.',
+    450
   );
   return parseJsonResponse(responseText);
 };
 
-// 4. Evaluate Answer
-export const evaluateAnswer = async ({
+// 4. Combined Evaluation & Next Question Generation (Single Bedrock Invocation)
+export const processAnswerUnified = async ({
   question,
   answer,
   role,
   experienceLevel,
   personality = 'professional',
+  currentQuestionNumber = 1,
+  totalQuestions = 5,
+  isLastQuestion = false,
+  resumeSkills = [],
+  jobDescriptionContext = '',
+  previousTopics = [],
 }) => {
-  const prompt = `You are an expert technical interviewer evaluating a candidate's answer.
-Context:
-- Target Role: ${role}
-- Experience Level: ${experienceLevel}
-- Question Asked: "${question}"
-- Candidate Answer: "${answer}"
+  const personalityInstructions = {
+    friendly: 'Supportive, warm, and encouraging tone.',
+    professional: 'Formal, balanced corporate interviewer tone.',
+    strict: 'Challenging, skeptical interviewer tone demanding depth.',
+  };
 
-Evaluate the candidate's answer objectively.
-Metrics (Score 0-10):
-- Technical Accuracy (0-10)
-- Relevance (0-10)
-- Depth (0-10)
-- Clarity (0-10)
-- Completeness (0-10)
-- Communication (0-10)
+  const prompt = `You are an expert ${role} interviewer with a ${personality} style (${personalityInstructions[personality] || personalityInstructions.professional}).
+The candidate is at ${experienceLevel} level.
 
-Also calculate category scores (0-100) and identify:
-- Strengths: 2-3 specific points the candidate explained well
-- Missing Points: 2-3 critical concepts, trade-offs, edge cases, or details that were omitted
-- Suggested Better Answer: A concise, ideal example answer demonstrating how to answer this effectively
+CURRENT QUESTION: "${question}"
+CANDIDATE ANSWER: "${answer}"
+
+${!isLastQuestion ? `CONTEXT FOR NEXT QUESTION:
+- Resume key skills: ${resumeSkills.slice(0, 8).join(', ') || 'General role skills'}
+- Target Job context: ${jobDescriptionContext.substring(0, 200) || 'Standard requirements'}
+- Previous topics covered: ${previousTopics.slice(-3).join('; ') || 'None'}
+- Interview Progress: Question ${currentQuestionNumber} of ${totalQuestions}` : 'NOTE: This was the final question of the interview.'}
+
+TASK:
+1. Evaluate the candidate's answer objectively with 0-10 criteria and 0-100 category scores.
+2. If NOT the final question:
+   - If the candidate's answer was incomplete or missed trade-offs, set shouldFollowUp = true and craft an intelligent follow-up question.
+   - Otherwise, set shouldFollowUp = false and craft the next logical interview question covering a different topic or competency for this role.
+3. If this IS the final question: set nextQuestion to null and shouldFollowUp to false.
 
 Return ONLY a valid JSON object in this exact schema:
 {
@@ -252,25 +263,41 @@ Return ONLY a valid JSON object in this exact schema:
     "projectKnowledge": 80,
     "behavioral": 75
   },
-  "strengths": [
-    "Identified correct core concept",
-    "Clear structure in explanation"
-  ],
-  "missingPoints": [
-    "Did not mention error handling or token revocation",
-    "Missed discussion of scalability trade-offs"
-  ],
-  "betterAnswer": "Concise ideal response that demonstrates high technical depth...",
-  "shouldFollowUp": true or false,
-  "followUpReason": "Explanation of why a follow-up probe is needed or not"
+  "strengths": ["Identified core concept correctly", "Clear structure in explanation"],
+  "missingPoints": ["Omitted error handling and edge cases"],
+  "betterAnswer": "Concise model answer demonstrating optimal technical depth...",
+  "shouldFollowUp": false,
+  "nextQuestion": ${!isLastQuestion ? `{
+    "question": "The next question or follow-up question text",
+    "category": "Technical"
+  }` : `null`}
 }
 `;
 
   const responseText = await callBedrock(
     prompt,
-    'You are an expert interview evaluator. Evaluate rigorously and constructively. Output only valid JSON.'
+    'You are an expert interviewer and evaluator. Output valid JSON only.',
+    850
   );
   return parseJsonResponse(responseText);
+};
+
+// 4b. Legacy separate evaluateAnswer (kept for backwards compatibility)
+export const evaluateAnswer = async ({
+  question,
+  answer,
+  role,
+  experienceLevel,
+  personality = 'professional',
+}) => {
+  return processAnswerUnified({
+    question,
+    answer,
+    role,
+    experienceLevel,
+    personality,
+    isLastQuestion: true,
+  });
 };
 
 // 5. Generate Follow-Up Question
@@ -305,7 +332,8 @@ Rules:
 
   const responseText = await callBedrock(
     prompt,
-    'You are an expert interviewer asking intelligent follow-up questions. Output only valid JSON.'
+    'You are an expert interviewer asking intelligent follow-up questions. Output only valid JSON.',
+    350
   );
   return parseJsonResponse(responseText);
 };
@@ -387,7 +415,8 @@ Return ONLY a valid JSON object in this exact schema:
 
   const responseText = await callBedrock(
     prompt,
-    'You are a senior hiring director synthesizing an actionable interview report. Output only valid JSON.'
+    'You are a senior hiring director synthesizing an actionable interview report. Output only valid JSON.',
+    1200
   );
   return parseJsonResponse(responseText);
 };

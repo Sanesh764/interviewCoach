@@ -1,17 +1,14 @@
+import 'dotenv/config';
 import dns from 'dns';
 dns.setServers(['1.1.1.1', '8.8.8.8']);
 
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import { connectDB } from './src/config/db.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
 import authRoutes from './src/routes/authRoutes.js';
 import resumeRoutes from './src/routes/resumeRoutes.js';
 import interviewRoutes from './src/routes/interviewRoutes.js';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 app.disable('x-powered-by');

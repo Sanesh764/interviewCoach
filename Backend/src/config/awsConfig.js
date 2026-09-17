@@ -40,7 +40,9 @@ export const verifyAwsConfiguration = (serviceName = 'AWS') => {
 const awsAuth = getAwsCredentials();
 
 export const bedrockClient = new BedrockRuntimeClient(
-  awsAuth ? awsAuth : { region: process.env.AWS_REGION || 'us-east-1' }
+  awsAuth
+    ? { ...awsAuth, maxAttempts: 1 }
+    : { region: process.env.AWS_REGION || 'us-east-1', maxAttempts: 1 }
 );
 
 export const s3Client = new S3Client(

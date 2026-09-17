@@ -42,8 +42,34 @@ export const handleResumeUpload = async (req, res, next) => {
       }
     }
 
-    // 3. Analyze resume with Amazon Bedrock
-    const structuredData = await analyzeResume(rawText);
+    // 3. Analyze resume with Amazon Bedrock (with resilient fallback for token throttling)
+    let structuredData = {
+      skills: [],
+      projects: [],
+      technologies: [],
+      experience: [],
+      education: [],
+    };
+
+    try {
+      structuredData = await analyzeResume(rawText);
+    } catch (bedrockErr) {
+      console.warn('[Resume Upload] Bedrock analysis skipped/throttled:', bedrockErr.message);
+
+      // Gracefully extract prominent technical skills directly from rawText
+      const commonTech = [
+        'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust',
+        'React', 'Next.js', 'Node.js', 'Express', 'Angular', 'Vue',
+        'MongoDB', 'PostgreSQL', 'MySQL', 'Redis', 'Docker', 'Kubernetes',
+        'AWS', 'Azure', 'GCP', 'Git', 'Linux', 'REST API', 'GraphQL', 'HTML', 'CSS', 'Tailwind',
+        'Machine Learning', 'Data Structures', 'Algorithms', 'Distributed Systems',
+        'SQL', 'NoSQL', 'CI/CD', 'Jest', 'Redux', 'Kafka', 'Microservices'
+      ];
+      const matched = commonTech.filter((tech) =>
+        new RegExp(`\\b${tech.replace('+', '\\+')}\\b`, 'i').test(rawText)
+      );
+      structuredData.skills = matched;
+    }
 
     res.status(200).json({
       success: true,

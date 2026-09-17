@@ -4,7 +4,7 @@ import * as bedrockService from '../ai/bedrockService.js';
 import { synthesizeSpeech } from '../aws/pollyService.js';
 
 export const interviewEngine = {
-  // 1. Initialize an interview session and generate Question 1
+  // 1. Initialize an interview session and generate Question 1 (single Bedrock call)
   startInterview: async ({
     userId,
     role,
@@ -15,23 +15,13 @@ export const interviewEngine = {
     jobDescription = '',
     resumeData = null,
   }) => {
-    // If JD is provided, analyze it via Bedrock
-    let jobDescriptionAnalysis = null;
-    if (jobDescription && jobDescription.trim().length > 20) {
-      try {
-        jobDescriptionAnalysis = await bedrockService.analyzeJobDescription(jobDescription);
-      } catch (err) {
-        console.warn('[InterviewEngine] JD analysis warning:', err.message);
-      }
-    }
-
-    // Generate Question 1 first to ensure AI service is functional
+    // Generate Question 1 directly (no separate JD analysis Bedrock call to save token quota)
     const generated = await bedrockService.generateInterviewQuestion({
       role,
       experienceLevel,
       personality,
       resumeData,
-      jobDescriptionAnalysis,
+      jobDescriptionAnalysis: jobDescription ? { summary: jobDescription.substring(0, 300) } : null,
       questionNumber: 1,
       totalQuestions: totalQuestionsTarget,
       previousQAs: [],
@@ -49,7 +39,7 @@ export const interviewEngine = {
       status: 'in_progress',
       resumeData: resumeData || {},
       jobDescription,
-      jobDescriptionAnalysis: jobDescriptionAnalysis || {},
+      jobDescriptionAnalysis: jobDescription ? { summary: jobDescription.substring(0, 300) } : {},
       questions: [],
     });
 
@@ -84,7 +74,7 @@ export const interviewEngine = {
     };
   },
 
-  // 2. Process candidate answer (Text or Transcript from Voice)
+  // 2. Process candidate answer (Unified single Bedrock call for evaluation + next question)
   processAnswer: async ({
     interviewId,
     answerText,
@@ -112,14 +102,31 @@ export const interviewEngine = {
       throw new Error('This question has already been answered. Please wait for the next question.');
     }
 
-    // 1. Evaluate answer using Bedrock
+    const currentCount = interview.questions.length;
+    const targetCount = interview.totalQuestionsTarget || 5;
+    const isLastQuestion = currentCount >= targetCount;
     const finalAnswer = answerText || transcript || '';
-    const evalResult = await bedrockService.evaluateAnswer({
+
+    // Compact context (avoids sending bloated strings and token overload)
+    const resumeSkills = interview.resumeData?.skills || [];
+    const jobDescriptionContext = interview.jobDescription
+      ? interview.jobDescription.substring(0, 200)
+      : '';
+    const previousTopics = interview.questions.map((q) => q.category).filter(Boolean);
+
+    // 1. Single Bedrock Call: Evaluates Answer AND decides/generates Next Question
+    const combinedResult = await bedrockService.processAnswerUnified({
       question: currentQA.question,
       answer: finalAnswer,
       role: interview.role,
       experienceLevel: interview.experienceLevel,
       personality: interview.personality,
+      currentQuestionNumber: currentCount,
+      totalQuestions: targetCount,
+      isLastQuestion,
+      resumeSkills,
+      jobDescriptionContext,
+      previousTopics,
     });
 
     // 2. Save evaluation to current QuestionAnswer
@@ -127,58 +134,22 @@ export const interviewEngine = {
     currentQA.transcript = transcript;
     currentQA.audioUrl = audioUrl;
     currentQA.mode = answerMode;
-    currentQA.evaluation = evalResult.evaluation;
-    currentQA.scores = evalResult.scores;
-    currentQA.strengths = evalResult.strengths || [];
-    currentQA.missingPoints = evalResult.missingPoints || [];
-    currentQA.betterAnswer = evalResult.betterAnswer || '';
+    currentQA.evaluation = combinedResult.evaluation;
+    currentQA.scores = combinedResult.scores;
+    currentQA.strengths = combinedResult.strengths || [];
+    currentQA.missingPoints = combinedResult.missingPoints || [];
+    currentQA.betterAnswer = combinedResult.betterAnswer || '';
     await currentQA.save();
 
-    const currentCount = interview.questions.length;
-    const targetCount = interview.totalQuestionsTarget || 5;
-
-    // 3. Determine if interview is finished
-    // If we have reached total questions target and are not in a crucial follow-up
-    if (currentCount >= targetCount) {
+    // 3. If this was the final question, conclude interview
+    if (isLastQuestion || !combinedResult.nextQuestion) {
       return await interviewEngine.completeInterview(interviewId);
     }
 
-    // 4. Dynamic Follow-Up System
-    // If Bedrock suggested follow-up AND we have not already done multiple consecutive follow-ups
-    let nextQuestionData = null;
-    let isFollowUp = false;
+    const nextQuestionData = combinedResult.nextQuestion;
+    const isFollowUp = combinedResult.shouldFollowUp || false;
 
-    if (evalResult.shouldFollowUp && !currentQA.isFollowUp) {
-      try {
-        nextQuestionData = await bedrockService.generateFollowUp({
-          question: currentQA.question,
-          answer: finalAnswer,
-          evaluation: evalResult,
-          role: interview.role,
-          personality: interview.personality,
-        });
-        isFollowUp = true;
-      } catch (err) {
-        console.warn('[InterviewEngine] Follow-up generation failed, proceeding to next topic:', err.message);
-      }
-    }
-
-    // If no follow-up requested or follow-up failed, generate next topic question
-    if (!nextQuestionData) {
-      nextQuestionData = await bedrockService.generateInterviewQuestion({
-        role: interview.role,
-        experienceLevel: interview.experienceLevel,
-        personality: interview.personality,
-        resumeData: interview.resumeData,
-        jobDescriptionAnalysis: interview.jobDescriptionAnalysis,
-        questionNumber: currentCount + 1,
-        totalQuestions: targetCount,
-        previousQAs: interview.questions,
-      });
-      isFollowUp = false;
-    }
-
-    // 5. Generate Polly audio for next question if in voice mode
+    // 4. Generate Polly audio for next question if in voice mode
     let aiSpeechAudioUrl = '';
     if (interview.mode === 'voice' || answerMode === 'voice') {
       try {
@@ -189,7 +160,7 @@ export const interviewEngine = {
       }
     }
 
-    // 6. Create next QuestionAnswer
+    // 5. Create next QuestionAnswer
     const nextQA = await QuestionAnswer.create({
       interviewId: interview._id,
       questionNumber: currentCount + 1,
@@ -208,7 +179,7 @@ export const interviewEngine = {
       completed: false,
       interview,
       nextQuestion: nextQA,
-      transcript,
+      evaluation: currentQA,
     };
   },
 
