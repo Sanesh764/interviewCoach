@@ -4,8 +4,11 @@ export const errorHandler = (err, req, res, next) => {
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   let message = err.message || 'Internal Server Error';
 
-  // Handle AWS missing credentials or permissions errors specifically
-  if (
+  // Handle Bedrock ThrottlingException (Quota limit)
+  if (err.name === 'ThrottlingException' || err.statusCode === 429) {
+    statusCode = 429;
+    message = err.message;
+  } else if (
     err.name === 'CredentialsProviderError' ||
     err.message?.includes('credentials') ||
     err.message?.includes('Bedrock') ||

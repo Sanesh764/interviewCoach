@@ -63,6 +63,14 @@ const callBedrock = async (prompt, systemPrompt = '', maxTokens = 2048, temperat
     return outputText.trim();
   } catch (error) {
     console.error('[Amazon Bedrock Invocation Error]', error);
+    if (error.name === 'ThrottlingException') {
+      const err = new Error(
+        `Amazon Bedrock quota limit reached: Your AWS account has reached its daily token limit on Amazon Bedrock ("Too many tokens per day"). Please wait for the daily quota reset or increase your Bedrock service quota in AWS Console.`
+      );
+      err.statusCode = 429;
+      err.name = 'ThrottlingException';
+      throw err;
+    }
     if (
       error.name === 'AccessDeniedException' ||
       error.name === 'ValidationException' ||

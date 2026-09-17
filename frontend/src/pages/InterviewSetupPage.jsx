@@ -166,7 +166,11 @@ export const InterviewSetupPage = () => {
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
             <div>
-              <h5 className="text-sm font-semibold text-rose-300">AWS Bedrock Configuration Required</h5>
+              <h5 className="text-sm font-semibold text-rose-300">
+                {error.includes('quota') || error.includes('tokens')
+                  ? 'Amazon Bedrock Quota Limit Reached'
+                  : 'AWS Configuration Notice'}
+              </h5>
               <p className="text-xs text-rose-300/90 mt-1 leading-relaxed">{error}</p>
             </div>
           </div>

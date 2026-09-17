@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
-
+import dns from "dns";
+dns.setServers([
+  '1.1.1.1',
+  '8.8.8.8'
+]);
 export const connectDB = async () => {
   const primaryUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/interviewcoach';
   const localUri = 'mongodb://127.0.0.1:27017/interviewcoach';
