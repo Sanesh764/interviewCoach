@@ -1,3 +1,6 @@
+import dns from 'dns';
+dns.setServers(['1.1.1.1', '8.8.8.8']);
+
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -10,10 +13,8 @@ import interviewRoutes from './src/routes/interviewRoutes.js';
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
-connectDB();
-
 const app = express();
+app.disable('x-powered-by');
 
 // Middleware
 app.use(cors({
@@ -47,8 +48,14 @@ app.use('/api/interviews', interviewRoutes);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`[Server] InterviewCoach AI backend running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+
+const startServer = async () => {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`[Server] InterviewCoach AI backend running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  });
+};
+
+startServer();
 
 export default app;

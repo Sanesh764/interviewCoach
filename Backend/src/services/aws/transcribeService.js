@@ -8,13 +8,21 @@ import crypto from 'crypto';
 export const transcribeAudio = async (s3AudioUri, mediaFormat = 'webm') => {
   verifyAwsConfiguration('Amazon Transcribe');
 
+  let sanitizedFormat = (mediaFormat || 'webm').toLowerCase();
+  if (sanitizedFormat.includes('webm')) sanitizedFormat = 'webm';
+  else if (sanitizedFormat.includes('mp4') || sanitizedFormat.includes('m4a')) sanitizedFormat = 'mp4';
+  else if (sanitizedFormat.includes('wav')) sanitizedFormat = 'wav';
+  else if (sanitizedFormat.includes('mp3') || sanitizedFormat.includes('mpeg')) sanitizedFormat = 'mp3';
+  else if (sanitizedFormat.includes('ogg')) sanitizedFormat = 'ogg';
+  else sanitizedFormat = 'webm';
+
   const randomString = crypto.randomBytes(6).toString('hex');
   const jobName = `interviewcoach-transcribe-${Date.now()}-${randomString}`;
 
   const startCommand = new StartTranscriptionJobCommand({
     TranscriptionJobName: jobName,
     LanguageCode: AWS_CONFIG.transcribeLanguageCode,
-    MediaFormat: mediaFormat,
+    MediaFormat: sanitizedFormat,
     Media: {
       MediaFileUri: s3AudioUri,
     },

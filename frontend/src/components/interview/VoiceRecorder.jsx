@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Play, Pause, RotateCcw, Send, AlertCircle, Volume2 } from 'lucide-react';
+import { Mic, Square, Play, Pause, RotateCcw, Send, AlertCircle } from 'lucide-react';
 import { Button } from '../common/Button';
 
 export const VoiceRecorder = ({ onSendAnswer, isProcessing = false, disabled = false }) => {

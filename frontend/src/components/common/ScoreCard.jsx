@@ -6,7 +6,6 @@ export const ScoreCard = ({
   maxScore = 100,
   icon: Icon,
   subtitle,
-  color = 'indigo',
 }) => {
   const percentage = Math.round((score / maxScore) * 100);
 

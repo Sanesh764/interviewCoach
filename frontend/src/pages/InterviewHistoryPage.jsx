@@ -4,13 +4,10 @@ import { interviewService } from '../services/interviewService';
 import {
   History,
   Calendar,
-  Award,
-  ChevronRight,
   Mic,
   MessageSquare,
   PlusCircle,
   Clock,
-  Sparkles,
   ArrowUpRight
 } from 'lucide-react';
 import { Button } from '../components/common/Button';

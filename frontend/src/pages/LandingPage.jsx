@@ -12,9 +12,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Cpu,
-  Layers,
-  BarChart3,
-  ShieldCheck,
   BrainCircuit,
   Volume2
 } from 'lucide-react';

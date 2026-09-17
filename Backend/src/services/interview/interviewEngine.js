@@ -101,10 +101,15 @@ export const interviewEngine = {
       throw new Error('This interview session is already completed.');
     }
 
-    // Find current active question (the last question in the list without an answer)
+    // Find current active question (the last question in the list)
     const currentQA = interview.questions[interview.questions.length - 1];
     if (!currentQA) {
       throw new Error('No active question found for this interview.');
+    }
+
+    // Guard against duplicate answer submission
+    if (currentQA.answer || currentQA.transcript) {
+      throw new Error('This question has already been answered. Please wait for the next question.');
     }
 
     // 1. Evaluate answer using Bedrock

@@ -25,7 +25,7 @@ export const interviewService = {
     formData.append('audio', audioBlob, 'recording.webm');
     const response = await API.post(`/interviews/${id}/voice-answer`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': undefined,
       },
     });
     return response.data;
@@ -67,7 +67,7 @@ export const interviewService = {
     formData.append('resume', file);
     const response = await API.post('/resume/upload', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': undefined,
       },
     });
     return response.data;

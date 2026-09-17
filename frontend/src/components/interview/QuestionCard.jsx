@@ -1,5 +1,4 @@
-import React from 'react';
-import { Bot, Sparkles, MessageCircle, HelpCircle, Volume2 } from 'lucide-react';
+import { Bot, Sparkles } from 'lucide-react';
 import { AudioPlayer } from './AudioPlayer';
 
 export const QuestionCard = ({

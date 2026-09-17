@@ -2,16 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { interviewService } from '../services/interviewService';
 import {
-  Sparkles,
   MessageSquare,
   Mic,
   Send,
-  CheckCircle2,
   AlertCircle,
-  Flag,
-  ArrowRight,
-  Bot,
-  Volume2
+  Flag
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';

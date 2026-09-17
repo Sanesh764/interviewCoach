@@ -20,6 +20,12 @@ export const errorHandler = (err, req, res, next) => {
       : `AI service configuration error: ${err.message}. Please configure AWS Bedrock credentials and model access in Backend/.env.`;
   }
 
+  // Handle Mongoose CastError (invalid ObjectId)
+  if (err.name === 'CastError') {
+    statusCode = 404;
+    message = `Resource not found with id: ${err.value}`;
+  }
+
   // Handle Mongoose duplicate key error
   if (err.code === 11000) {
     statusCode = 400;

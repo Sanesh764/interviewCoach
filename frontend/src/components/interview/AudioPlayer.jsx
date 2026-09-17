@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, Play, Pause, RotateCcw } from 'lucide-react';
+import { Volume2, Play, Pause } from 'lucide-react';
 
 export const AudioPlayer = ({ audioUrl, autoPlay = false, onEnded }) => {
   const [isPlaying, setIsPlaying] = useState(false);

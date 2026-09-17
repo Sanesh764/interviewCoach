@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   Clock,
-  ArrowRight,
   Mic,
   MessageSquare,
   ChevronRight,
@@ -43,6 +42,17 @@ export const DashboardPage = () => {
 
     fetchDashboardData();
   }, []);
+
+  if (loading && !stats) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-slate-400">Loading interview statistics...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
