@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
           const userData = await authService.getCurrentUser();
           setUser(userData);
           localStorage.setItem('interviewcoach_user', JSON.stringify(userData));
-        } catch (_error) {
+        } catch {
           console.warn('[AuthContext] Session expired or invalid');
           authService.logout();
           setUser(null);
