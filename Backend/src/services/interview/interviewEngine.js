@@ -15,13 +15,23 @@ export const interviewEngine = {
     jobDescription = '',
     resumeData = null,
   }) => {
-    // Generate Question 1 directly (no separate JD analysis Bedrock call to save token quota)
+    // Analyze Job Description if provided to extract structured requirements
+    let jdAnalysis = null;
+    if (jobDescription && jobDescription.trim()) {
+      try {
+        jdAnalysis = await bedrockService.analyzeJobDescription(jobDescription.trim());
+      } catch (err) {
+        console.warn('[InterviewEngine] JD analysis warning:', err.message);
+      }
+    }
+
+    // Generate Question 1 with JD and resume context
     const generated = await bedrockService.generateInterviewQuestion({
       role,
       experienceLevel,
       personality,
       resumeData,
-      jobDescriptionAnalysis: jobDescription ? { summary: jobDescription.substring(0, 300) } : null,
+      jobDescriptionAnalysis: jdAnalysis,
       questionNumber: 1,
       totalQuestions: totalQuestionsTarget,
       previousQAs: [],
@@ -39,7 +49,7 @@ export const interviewEngine = {
       status: 'in_progress',
       resumeData: resumeData || {},
       jobDescription,
-      jobDescriptionAnalysis: jobDescription ? { summary: jobDescription.substring(0, 300) } : {},
+      jobDescriptionAnalysis: jdAnalysis || {},
       questions: [],
     });
 
@@ -189,9 +199,14 @@ export const interviewEngine = {
       mode: interview.mode,
     });
 
-    interview.questions.push(nextQA._id);
-    interview.currentQuestionIndex = currentCount + 1;
-    await interview.save();
+    try {
+      interview.questions.push(nextQA._id);
+      interview.currentQuestionIndex = currentCount + 1;
+      await interview.save();
+    } catch (saveErr) {
+      await QuestionAnswer.findByIdAndDelete(nextQA._id).catch(() => {});
+      throw saveErr;
+    }
 
     return {
       completed: false,

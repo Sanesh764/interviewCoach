@@ -34,16 +34,21 @@ export const uploadToS3 = async ({ fileBuffer, mimeType, folder = 'uploads', ori
   try {
     presignedUrl = await getPresignedUrl(key, 3600); // 1 hour expiration
   } catch (signErr) {
-    console.warn('[S3] Presigned URL generation warning:', signErr.message);
+    try {
+      presignedUrl = await getPresignedUrl(key, 3600);
+    } catch (retryErr) {
+      throw new Error(
+        `File was uploaded to S3 but failed to generate secure presigned URL for ${key}: ${retryErr.message}`
+      );
+    }
   }
 
   const s3Uri = `s3://${AWS_CONFIG.s3BucketName}/${key}`;
-  const url = presignedUrl || `https://${AWS_CONFIG.s3BucketName}.s3.${AWS_CONFIG.region}.amazonaws.com/${key}`;
 
   return {
     key,
     bucket: AWS_CONFIG.s3BucketName,
     s3Uri,
-    url,
+    url: presignedUrl,
   };
 };

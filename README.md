@@ -2,9 +2,9 @@
 
 > **Practice smarter. Interview better.**
 
-InterviewCoach AI is a production-grade, AI-powered interview preparation platform designed specifically for college students, freshers, and job seekers. Unlike generic conversational chatbots, InterviewCoach AI orchestrates a realistic, structured, multi-turn interview experience powered by **Amazon Bedrock (Claude 3 Haiku)**, **Amazon S3**, **Amazon Transcribe**, and **Amazon Polly**.
+InterviewCoach AI is an AWS-powered adaptive AI interview platform designed specifically for college students, freshers, and job seekers. Unlike generic conversational chatbots, InterviewCoach AI orchestrates a realistic, structured, multi-turn interview experience powered by **Amazon Bedrock (Claude 3 Haiku)**, **Amazon S3**, **Amazon Transcribe**, and **Amazon Polly**.
 
-The platform understands a candidate's background by extracting context from their uploaded resume (PDF/DOCX) and target job description. It adapts questions to the candidate's actual experience level, assesses answers in real-time with objective multi-metric scoring, intelligently probes deeper with dynamic follow-up questions when an answer is incomplete, and generates an exhaustive post-interview evaluation report complete with a personalized 7-day targeted improvement plan. Candidates can practice seamlessly via **interactive text chat** or **voice recording** with speech synthesis.
+The platform understands a candidate's background by extracting context from their uploaded resume (PDF/DOCX) and target job description. It adapts questions to the candidate's actual experience level, provides immediate feedback after each answer with objective multi-metric scoring, intelligently probes deeper with dynamic follow-up questions when an answer is incomplete, and generates an exhaustive post-interview evaluation report complete with a personalized 7-day targeted improvement plan. Candidates can practice seamlessly via **interactive text chat** or **voice recording** with speech synthesis.
 
 ---
 
@@ -28,7 +28,7 @@ Interview preparation requires a realistic, contextual, and structured evaluatio
 InterviewCoach AI solves this through a closed-loop interview engineering cycle:
 
 ```text
-Practice → Interview → Real-Time Feedback → Weakness Detection → Personalized 7-Day Plan → Practice Again
+Practice → Interview → Immediate AI Feedback → Weakness Detection → Personalized 7-Day Plan → Practice Again
 ```
 
 The platform combines:
@@ -291,24 +291,33 @@ The intelligence layer evaluates each candidate response against four primary co
 └──────────────────────┴─────────────────────────────────┘
 ```
 
-### JSON Output Contract:
+### JSON Output Contract (Unified Answer Evaluation & Next Question):
 Amazon Bedrock returns structured JSON matching this schema:
 ```json
 {
   "evaluation": {
-    "score": 8,
     "technicalAccuracy": 8,
-    "communication": 9,
+    "relevance": 9,
+    "depth": 7,
+    "clarity": 8,
     "completeness": 7,
-    "feedback": "Clear explanation of React state hooks; missed discussion of cleanup in useEffect.",
-    "strengths": ["Clear definition of useState", "Good explanation of re-rendering"],
-    "missingPoints": ["Cleanup function in useEffect for subscriptions"],
-    "suggestedBetterAnswer": "When managing state in React, useState handles local state while useEffect manages side effects. For subscriptions or timers, returning a cleanup function prevents memory leaks..."
+    "communication": 8
   },
-  "isFollowUp": true,
+  "scores": {
+    "overall": 78,
+    "technical": 80,
+    "communication": 80,
+    "problemSolving": 75,
+    "projectKnowledge": 80,
+    "behavioral": 75
+  },
+  "strengths": ["Identified core concept correctly", "Clear structure in explanation"],
+  "missingPoints": ["Omitted error handling and edge cases"],
+  "betterAnswer": "When managing state in React, useState handles local state while useEffect manages side effects. For subscriptions or timers, returning a cleanup function prevents memory leaks...",
+  "shouldFollowUp": false,
   "nextQuestion": {
-    "text": "How would you handle cleaning up an active WebSocket connection within that useEffect hook?",
-    "category": "Technical Knowledge"
+    "question": "How would you handle cleaning up an active WebSocket connection within that useEffect hook?",
+    "category": "Technical"
   }
 }
 ```
@@ -344,37 +353,47 @@ The application utilizes three core MongoDB models:
 ```javascript
 {
   userId: { type: ObjectId, ref: 'User', required: true, index: true },
-  role: { type: String, required: true },
-  experienceLevel: { type: String, enum: ['Student', 'Fresher', '0-2 years', '2-5 years', '5+ years'] },
+  role: { type: String, required: true, trim: true },
+  experienceLevel: { type: String, enum: ['Student', 'Fresher', '0-2 years', '2-5 years', '5+ years'], default: 'Fresher' },
   mode: { type: String, enum: ['text', 'voice'], default: 'text' },
-  personality: { type: String, enum: ['friendly', 'professional', 'strict'] },
+  personality: { type: String, enum: ['friendly', 'professional', 'strict'], default: 'professional' },
   totalQuestionsTarget: { type: Number, default: 5 },
   currentQuestionIndex: { type: Number, default: 1 },
-  status: { type: String, enum: ['setup', 'in_progress', 'completed'] },
-  resume: { s3Url: String, extractedText: String, extractedSkills: [String] },
-  jobDescription: { rawText: String, analysis: Object },
-  questions: [{
-    questionId: ObjectId,
-    text: String,
-    category: String,
-    audioUrl: String,
-    isFollowUp: Boolean,
-    parentQuestionId: ObjectId
-  }],
+  status: { type: String, enum: ['in_progress', 'completed', 'abandoned'], default: 'in_progress' },
+  resumeData: {
+    fileName: String,
+    fileUrl: String,
+    rawText: String,
+    skills: [String],
+    projects: [String],
+    experience: [String],
+    technologies: [String],
+    education: [String]
+  },
+  jobDescription: { type: String, default: '' },
+  jobDescriptionAnalysis: {
+    requiredSkills: [String],
+    preferredSkills: [String],
+    technologies: [String],
+    responsibilities: [String],
+    experienceRequirements: String
+  },
+  overallScore: { type: Number, default: 0 },
   categoryScores: {
-    technicalKnowledge: Number,
+    technical: Number,
     communication: Number,
     problemSolving: Number,
     projectKnowledge: Number,
     behavioral: Number
   },
-  finalReport: {
-    overallScore: Number,
-    summary: String,
+  report: {
     strengths: [String],
-    areasToImprove: [{ area: String, observation: String, recommendation: String }],
-    improvementPlan: [{ day: Number, focus: String, tasks: [String] }]
+    weakAreas: [String],
+    improvementPlan: [{ day: Number, focus: String, tasks: [String] }],
+    summary: String
   },
+  questions: [{ type: ObjectId, ref: 'QuestionAnswer' }],
+  completedAt: Date,
   timestamps: true
 }
 ```
@@ -383,26 +402,34 @@ The application utilizes three core MongoDB models:
 ```javascript
 {
   interviewId: { type: ObjectId, ref: 'Interview', required: true, index: true },
-  userId: { type: ObjectId, ref: 'User', required: true },
-  questionIndex: Number,
-  questionText: String,
-  category: String,
-  isFollowUp: Boolean,
-  parentQuestionId: ObjectId,
-  answerMode: { type: String, enum: ['text', 'voice'] },
-  answerText: String,
-  audioS3Url: String,
-  transcript: String,
+  questionNumber: { type: Number, required: true },
+  question: { type: String, required: true },
+  category: { type: String, enum: ['Technical', 'Project', 'Behavioral', 'Follow-up', 'General'], default: 'Technical' },
+  audioUrl: { type: String, default: '' },
+  aiSpeechAudioUrl: { type: String, default: '' },
+  answer: { type: String, default: '' },
+  transcript: { type: String, default: '' },
+  mode: { type: String, enum: ['text', 'voice'], default: 'text' },
+  isFollowUp: { type: Boolean, default: false },
   evaluation: {
-    score: Number,
     technicalAccuracy: Number,
-    communication: Number,
+    relevance: Number,
+    depth: Number,
+    clarity: Number,
     completeness: Number,
-    feedback: String,
-    strengths: [String],
-    missingPoints: [String],
-    suggestedBetterAnswer: String
+    communication: Number
   },
+  scores: {
+    overall: Number,
+    technical: Number,
+    communication: Number,
+    problemSolving: Number,
+    projectKnowledge: Number,
+    behavioral: Number
+  },
+  strengths: [String],
+  missingPoints: [String],
+  betterAnswer: String,
   timestamps: true
 }
 ```
