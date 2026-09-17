@@ -10,7 +10,10 @@ export const protect = async (req, res, next) => {
   ) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'interviewcoach_jwt_dev_secret_key_2026');
+      if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET configuration is missing on the server.');
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       const user = await User.findById(decoded.id).select('-password');
       if (!user) {

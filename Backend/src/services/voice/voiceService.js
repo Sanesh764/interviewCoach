@@ -1,12 +1,8 @@
 import { uploadToS3 } from '../aws/s3Service.js';
-import { transcribeAudio } from '../aws/transcribeService.js';
+import { transcribeAudio, getSanitizedAudioFormat } from '../aws/transcribeService.js';
 
 export const processVoiceRecording = async ({ audioBuffer, mimeType = 'audio/webm' }) => {
-  let ext = 'webm';
-  if (mimeType.includes('wav')) ext = 'wav';
-  else if (mimeType.includes('mp4') || mimeType.includes('m4a')) ext = 'mp4';
-  else if (mimeType.includes('mp3') || mimeType.includes('mpeg')) ext = 'mp3';
-  else if (mimeType.includes('ogg')) ext = 'ogg';
+  const ext = getSanitizedAudioFormat(mimeType);
 
   // 1. Upload audio recording to Amazon S3
   const s3Result = await uploadToS3({

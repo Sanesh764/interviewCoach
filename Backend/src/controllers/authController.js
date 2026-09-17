@@ -2,7 +2,10 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'interviewcoach_jwt_dev_secret_key_2026', {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET configuration is missing on the server.');
+  }
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
 };

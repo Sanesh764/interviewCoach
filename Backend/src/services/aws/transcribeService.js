@@ -5,16 +5,20 @@ import {
 import { transcribeClient, AWS_CONFIG, verifyAwsConfiguration } from '../../config/awsConfig.js';
 import crypto from 'crypto';
 
+// Sanitize arbitrary browser MIME types into standard Amazon Transcribe media formats
+export const getSanitizedAudioFormat = (formatOrMime = 'webm') => {
+  const str = String(formatOrMime || 'webm').toLowerCase();
+  if (str.includes('wav')) return 'wav';
+  if (str.includes('mp4') || str.includes('m4a')) return 'mp4';
+  if (str.includes('mp3') || str.includes('mpeg')) return 'mp3';
+  if (str.includes('ogg')) return 'ogg';
+  return 'webm';
+};
+
 export const transcribeAudio = async (s3AudioUri, mediaFormat = 'webm') => {
   verifyAwsConfiguration('Amazon Transcribe');
 
-  let sanitizedFormat = (mediaFormat || 'webm').toLowerCase();
-  if (sanitizedFormat.includes('webm')) sanitizedFormat = 'webm';
-  else if (sanitizedFormat.includes('mp4') || sanitizedFormat.includes('m4a')) sanitizedFormat = 'mp4';
-  else if (sanitizedFormat.includes('wav')) sanitizedFormat = 'wav';
-  else if (sanitizedFormat.includes('mp3') || sanitizedFormat.includes('mpeg')) sanitizedFormat = 'mp3';
-  else if (sanitizedFormat.includes('ogg')) sanitizedFormat = 'ogg';
-  else sanitizedFormat = 'webm';
+  const sanitizedFormat = getSanitizedAudioFormat(mediaFormat);
 
   const randomString = crypto.randomBytes(6).toString('hex');
   const jobName = `interviewcoach-transcribe-${Date.now()}-${randomString}`;

@@ -10,17 +10,41 @@ import authRoutes from './src/routes/authRoutes.js';
 import resumeRoutes from './src/routes/resumeRoutes.js';
 import interviewRoutes from './src/routes/interviewRoutes.js';
 
+// Fail fast if critical environment variables are missing
+if (!process.env.JWT_SECRET) {
+  console.error('[Fatal Error] JWT_SECRET is not configured in environment variables.');
+  process.exit(1);
+}
+
 const app = express();
 app.disable('x-powered-by');
 
-// Middleware
+// Environment-based CORS configuration
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.CORS_ORIGIN,
+].filter(Boolean);
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl) or any localhost port
-    if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
+    // 1. Allow non-browser requests (tools, curl, server-to-server) with no origin header
+    if (!origin) {
       return callback(null, true);
     }
-    return callback(null, true);
+
+    // 2. Allow any localhost / 127.0.0.1 port for local development
+    const isDev = (process.env.NODE_ENV || 'development') === 'development';
+    if (isDev && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // 3. Allow explicit production origins
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Reject all unauthorized origins
+    return callback(new Error(`CORS policy rejection: Origin '${origin}' is not permitted.`));
   },
   credentials: true,
 }));

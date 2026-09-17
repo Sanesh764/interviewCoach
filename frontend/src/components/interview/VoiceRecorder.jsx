@@ -1,3 +1,4 @@
+import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Play, Pause, RotateCcw, Send, AlertCircle } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -117,6 +118,7 @@ export const VoiceRecorder = ({ onSendAnswer, isProcessing = false, disabled = f
   };
 
   const handleSend = () => {
+    if (isProcessing || disabled) return;
     if (!audioBlob) {
       setError('Please record an answer before submitting.');
       return;
@@ -235,6 +237,7 @@ export const VoiceRecorder = ({ onSendAnswer, isProcessing = false, disabled = f
               className="w-full"
               onClick={handleSend}
               isLoading={isProcessing}
+              disabled={disabled || isProcessing}
               icon={Send}
             >
               Send Voice Answer

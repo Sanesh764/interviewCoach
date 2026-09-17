@@ -8,6 +8,9 @@ export const errorHandler = (err, req, res, next) => {
   if (err.name === 'ThrottlingException' || err.statusCode === 429) {
     statusCode = 429;
     message = err.message;
+  } else if (err.name === 'MulterError') {
+    statusCode = 400;
+    message = err.code === 'LIMIT_FILE_SIZE' ? 'File is too large. Maximum allowed size is 10MB.' : `File upload error: ${err.message}`;
   } else if (
     err.name === 'CredentialsProviderError' ||
     err.message?.includes('credentials') ||

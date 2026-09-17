@@ -114,6 +114,23 @@ export const interviewEngine = {
       : '';
     const previousTopics = interview.questions.map((q) => q.category).filter(Boolean);
 
+    // Calculate dynamic adaptive difficulty from previous question scores
+    const evaluatedQAs = interview.questions.filter(
+      (q) => q._id.toString() !== currentQA._id.toString() && (q.scores?.overall || q.evaluation?.technicalAccuracy)
+    );
+    let difficultyLevel = 'balanced';
+    if (evaluatedQAs.length > 0) {
+      const avgScore =
+        evaluatedQAs.reduce((sum, q) => sum + (q.scores?.overall || 70), 0) / evaluatedQAs.length;
+      if (avgScore < 65) {
+        difficultyLevel = 'foundational';
+      } else if (avgScore > 80) {
+        difficultyLevel = 'advanced';
+      } else {
+        difficultyLevel = 'balanced';
+      }
+    }
+
     // 1. Single Bedrock Call: Evaluates Answer AND decides/generates Next Question
     const combinedResult = await bedrockService.processAnswerUnified({
       question: currentQA.question,
@@ -127,6 +144,7 @@ export const interviewEngine = {
       resumeSkills,
       jobDescriptionContext,
       previousTopics,
+      difficultyLevel,
     });
 
     // 2. Save evaluation to current QuestionAnswer

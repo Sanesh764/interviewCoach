@@ -51,6 +51,9 @@ The platform combines:
 | **Job Description Analysis** | Ingests target JDs to identify required core competencies, key responsibilities, and domain requirements. | Aligns interview questions with specific hiring expectations. |
 | **AI-Generated Questions** | Generates dynamic, non-repetitive technical and behavioral questions using Amazon Bedrock (Claude 3 Haiku). | Eliminates predictable, memorized question banks. |
 | **Dynamic Follow-Up Questions** | Evaluates candidate answer depth; if key details are vague or missing, the AI interviewer asks a targeted follow-up question. | Replicates real interviewer behavior by testing true comprehension. |
+| **Dynamic Adaptive Difficulty** | Tracks running answer scores across the session and adjusts question complexity (`foundational` < 65, `balanced` 65–80, `advanced` > 80). | Calibrates interview challenge to candidate aptitude in real-time. |
+| **Token-Optimized AI Engine** | Combines answer evaluation, follow-up assessment, and next-question generation into a single Amazon Bedrock invocation. | Cuts API latency, saves token quotas, and reduces Bedrock requests by >55%. |
+| **Private S3 & Presigned URLs** | Stores resumes, voice recordings, and Polly speech in a private S3 bucket accessed via AWS SigV4 presigned URLs (1h TTL). | Ensures 100% private cloud storage while enabling smooth browser audio playback. |
 | **Text Interview Mode** | Clean, distraction-free conversational chat UI with real-time markdown rendering and question navigation. | Ideal for structured practice, code snippets, and fast iteration. |
 | **Voice Interview Mode** | In-browser audio recording via MediaRecorder API, automated S3 storage, and transcription via Amazon Transcribe. | Builds confidence and verbal articulation under realistic interview conditions. |
 | **Interviewer Personalities** | Configurable interviewer demeanors: **Friendly** (supportive, encouraging), **Professional** (structured, balanced), or **Strict** (demanding, deep technical scrutiny). | Trains candidates to handle diverse interviewer types and pressure levels. |
@@ -59,7 +62,7 @@ The platform combines:
 | **Suggested Better Answers** | Each evaluated question provides an exemplary model answer demonstrating optimal structure and clarity. | Teaches candidates how to formulate top-tier interview responses. |
 | **Final Diagnostic Report** | Comprehensive performance summary with category breakdown (Technical, Communication, Problem-Solving, Project Knowledge, Behavioral). | Pinpoints exact performance levels across all dimensions. |
 | **Personalized 7-Day Plan** | Generates a structured daily schedule with actionable tasks targeting the candidate's exact identified weak areas. | Converts interview mistakes into an immediate, structured study routine. |
-| **Dashboard Progress Tracking** | Historical score trends, strongest/weakest skills, and practice recommendations calculated from session data. | Visualizes improvement over time and motivates ongoing practice. |
+| **Dashboard Progress Tracking** | Historical score trends, strongest/weakest skills, and practice recommendations calculated dynamically without data duplication. | Visualizes improvement over time and motivates ongoing practice. |
 
 ---
 
@@ -544,7 +547,7 @@ interviewCoach/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-org/interviewCoach.git
+git clone https://github.com/Sanesh764/interviewCoach.git
 cd interviewCoach
 ```
 

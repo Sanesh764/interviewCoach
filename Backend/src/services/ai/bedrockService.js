@@ -219,11 +219,18 @@ export const processAnswerUnified = async ({
   resumeSkills = [],
   jobDescriptionContext = '',
   previousTopics = [],
+  difficultyLevel = 'balanced',
 }) => {
   const personalityInstructions = {
     friendly: 'Supportive, warm, and encouraging tone.',
     professional: 'Formal, balanced corporate interviewer tone.',
     strict: 'Challenging, skeptical interviewer tone demanding depth.',
+  };
+
+  const difficultyGuidance = {
+    foundational: 'Target core conceptual fundamentals and clear definitions to reinforce basics.',
+    balanced: 'Target practical application, real-world implementation, and workflow reasoning.',
+    advanced: 'Target complex edge cases, architectural trade-offs, scalability, and deep system design.',
   };
 
   const prompt = `You are an expert ${role} interviewer with a ${personality} style (${personalityInstructions[personality] || personalityInstructions.professional}).
@@ -236,13 +243,14 @@ ${!isLastQuestion ? `CONTEXT FOR NEXT QUESTION:
 - Resume key skills: ${resumeSkills.slice(0, 8).join(', ') || 'General role skills'}
 - Target Job context: ${jobDescriptionContext.substring(0, 200) || 'Standard requirements'}
 - Previous topics covered: ${previousTopics.slice(-3).join('; ') || 'None'}
-- Interview Progress: Question ${currentQuestionNumber} of ${totalQuestions}` : 'NOTE: This was the final question of the interview.'}
+- Interview Progress: Question ${currentQuestionNumber} of ${totalQuestions}
+- Adaptive Difficulty Target: ${difficultyLevel.toUpperCase()} (${difficultyGuidance[difficultyLevel] || difficultyGuidance.balanced})` : 'NOTE: This was the final question of the interview.'}
 
 TASK:
 1. Evaluate the candidate's answer objectively with 0-10 criteria and 0-100 category scores.
 2. If NOT the final question:
    - If the candidate's answer was incomplete or missed trade-offs, set shouldFollowUp = true and craft an intelligent follow-up question.
-   - Otherwise, set shouldFollowUp = false and craft the next logical interview question covering a different topic or competency for this role.
+   - Otherwise, set shouldFollowUp = false and craft the next logical interview question covering a different topic, aligned to the Adaptive Difficulty Target (${difficultyLevel}).
 3. If this IS the final question: set nextQuestion to null and shouldFollowUp to false.
 
 Return ONLY a valid JSON object in this exact schema:
@@ -282,61 +290,6 @@ Return ONLY a valid JSON object in this exact schema:
   return parseJsonResponse(responseText);
 };
 
-// 4b. Legacy separate evaluateAnswer (kept for backwards compatibility)
-export const evaluateAnswer = async ({
-  question,
-  answer,
-  role,
-  experienceLevel,
-  personality = 'professional',
-}) => {
-  return processAnswerUnified({
-    question,
-    answer,
-    role,
-    experienceLevel,
-    personality,
-    isLastQuestion: true,
-  });
-};
-
-// 5. Generate Follow-Up Question
-export const generateFollowUp = async ({
-  question,
-  answer,
-  evaluation,
-  role,
-  personality = 'professional',
-}) => {
-  const prompt = `You are an expert interviewer.
-The candidate just answered a question, but their answer introduced a concept, was ambiguous, or missed critical trade-offs.
-Generate an intelligent follow-up question that drills down directly into what they just said.
-
-Context:
-- Target Role: ${role}
-- Interviewer Personality: ${personality}
-- Previous Question: "${question}"
-- Candidate's Answer: "${answer}"
-- Evaluation Strengths: ${evaluation.strengths?.join(', ') || 'N/A'}
-- Missing Points: ${evaluation.missingPoints?.join(', ') || 'N/A'}
-
-Rules:
-1. The follow-up question MUST directly quote or reference what the candidate said (e.g. "You mentioned X...", "Why did you choose Y over Z?").
-2. Make it feel like a real conversational interviewer probing for depth.
-3. Return ONLY a valid JSON object in this exact schema:
-{
-  "question": "The follow-up question text",
-  "category": "Follow-up"
-}
-`;
-
-  const responseText = await callBedrock(
-    prompt,
-    'You are an expert interviewer asking intelligent follow-up questions. Output only valid JSON.',
-    350
-  );
-  return parseJsonResponse(responseText);
-};
 
 // 6. Generate Final Report & 7-Day Improvement Plan
 export const generateFinalReport = async ({

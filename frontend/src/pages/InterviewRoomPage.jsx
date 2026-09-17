@@ -64,7 +64,8 @@ export const InterviewRoomPage = () => {
 
   // Submit Text Answer
   const handleTextSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    if (processingStatus) return;
     if (!textAnswer.trim()) {
       setError('Please type your answer before submitting.');
       return;
@@ -95,6 +96,7 @@ export const InterviewRoomPage = () => {
 
   // Submit Voice Answer
   const handleVoiceSubmit = async (audioBlob) => {
+    if (processingStatus) return;
     setError('');
     setProcessingStatus('transcribing');
 
