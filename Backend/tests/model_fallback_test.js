@@ -456,6 +456,198 @@ async function runTests() {
     assert('Attempt history records Claude failure and Nova success', result.attemptHistory.length >= 2);
   }
 
+  // ----------------------------------------------------
+  // Test P: Malformed Claude JSON triggers fallback to Nova Lite
+  // ----------------------------------------------------
+  console.log('\nTest P: Malformed Claude JSON output triggers fallback to Nova Lite');
+  {
+    const mockClient = createMockBedrockClient({
+      'anthropic.claude-3-haiku-20240307-v1:0': () => ({
+        output: { message: { content: [{ text: 'Here is an answer: { "not valid json...' }] } },
+        usage: { inputTokens: 40, outputTokens: 20, totalTokens: 60 },
+      }),
+      'amazon.nova-lite-v1:0': () => ({
+        output: { message: { content: [{ text: mockQ1Response }] } },
+        usage: { inputTokens: 45, outputTokens: 25, totalTokens: 70 },
+      }),
+      'google.gemma-3-27b-it': () => {
+        throw new Error('Gemma should not be called in Test P');
+      },
+    });
+
+    const result = await callBedrockRouter(
+      'Generate question',
+      '',
+      500,
+      0.5,
+      mockClient,
+      (data) => {
+        if (!data.question) return 'Missing question';
+        return null;
+      }
+    );
+
+    assert('Malformed Claude JSON caused fallback to Nova Lite', result.modelUsed.includes('amazon.nova-lite-v1:0'));
+    assert('Nova Lite parsed output is populated', !!result.parsed?.question);
+    assert('Gemma was NOT called', !mockClient.calls.some((c) => c.modelId === 'google.gemma-3-27b-it'));
+  }
+
+  // ----------------------------------------------------
+  // Test Q: Valid Claude JSON does NOT fallback
+  // ----------------------------------------------------
+  console.log('\nTest Q: Valid Claude JSON succeeds without fallback');
+  {
+    const mockClient = createMockBedrockClient({
+      'anthropic.claude-3-haiku-20240307-v1:0': () => ({
+        output: { message: { content: [{ text: mockQ1Response }] } },
+        usage: { inputTokens: 35, outputTokens: 20, totalTokens: 55 },
+      }),
+      'amazon.nova-lite-v1:0': () => {
+        throw new Error('Nova Lite should never be called when Claude returns valid JSON');
+      },
+    });
+
+    const result = await callBedrockRouter(
+      'Generate question',
+      '',
+      500,
+      0.5,
+      mockClient,
+      (data) => {
+        if (!data.question) return 'Missing question';
+        return null;
+      }
+    );
+
+    assert('Valid Claude JSON succeeds on Claude', result.modelUsed === 'anthropic.claude-3-haiku-20240307-v1:0');
+    assert('Parsed question matches Claude response', result.parsed?.question === 'Can you describe a challenging technical architecture decision you made?');
+    assert('Only 1 Bedrock call was made (no fallback cycling)', mockClient.calls.length === 1);
+  }
+
+  // ----------------------------------------------------
+  // Test R: Truncated Claude JSON (stopReason: max_tokens) triggers fallback
+  // ----------------------------------------------------
+  console.log('\nTest R: Truncated Claude JSON (stopReason: max_tokens) triggers fallback to Nova Lite');
+  {
+    const mockClient = createMockBedrockClient({
+      'anthropic.claude-3-haiku-20240307-v1:0': () => ({
+        output: { message: { content: [{ text: '{"question": "Incomplete question text that cuts off mid-str' }] } },
+        usage: { inputTokens: 50, outputTokens: 500, totalTokens: 550 },
+        stopReason: 'max_tokens',
+      }),
+      'amazon.nova-lite-v1:0': () => ({
+        output: { message: { content: [{ text: mockQ1Response }] } },
+        usage: { inputTokens: 50, outputTokens: 30, totalTokens: 80 },
+        stopReason: 'end_turn',
+      }),
+    });
+
+    const result = await callBedrockRouter(
+      'Generate question',
+      '',
+      500,
+      0.5,
+      mockClient,
+      (data) => {
+        if (!data.question) return 'Missing question';
+        return null;
+      }
+    );
+
+    assert('Truncated output causes fallback to Nova Lite', result.modelUsed.includes('amazon.nova-lite-v1:0'));
+    assert('Nova Lite provided clean complete response', result.stopReason === 'end_turn');
+  }
+
+  // ----------------------------------------------------
+  // Test S: Schema-invalid Claude JSON triggers fallback to Nova Lite
+  // ----------------------------------------------------
+  console.log('\nTest S: Schema-invalid Claude JSON triggers fallback to Nova Lite');
+  {
+    const mockClient = createMockBedrockClient({
+      'anthropic.claude-3-haiku-20240307-v1:0': () => ({
+        output: { message: { content: [{ text: JSON.stringify({ wrongField: 123, status: 'ok' }) }] } },
+        usage: { inputTokens: 30, outputTokens: 15, totalTokens: 45 },
+      }),
+      'amazon.nova-lite-v1:0': () => ({
+        output: { message: { content: [{ text: mockQ1Response }] } },
+        usage: { inputTokens: 35, outputTokens: 25, totalTokens: 60 },
+      }),
+    });
+
+    const result = await callBedrockRouter(
+      'Generate question',
+      '',
+      500,
+      0.5,
+      mockClient,
+      (data) => {
+        if (!data.question) return 'Missing "question" field';
+        return null;
+      }
+    );
+
+    assert('Schema-invalid output causes fallback to Nova Lite', result.modelUsed.includes('amazon.nova-lite-v1:0'));
+    assert('Parsed question is valid', !!result.parsed?.question);
+  }
+
+  // ----------------------------------------------------
+  // Test T: Programming error (TypeError) fails fast without fallback
+  // ----------------------------------------------------
+  console.log('\nTest T: Programming error fails fast without fallback');
+  {
+    const mockClient = createMockBedrockClient({
+      'anthropic.claude-3-haiku-20240307-v1:0': () => ({
+        output: { message: { content: [{ text: mockQ1Response }] } },
+        usage: { inputTokens: 30, outputTokens: 20, totalTokens: 50 },
+      }),
+      'amazon.nova-lite-v1:0': () => {
+        throw new Error('Should not fallback on programming error');
+      },
+    });
+
+    try {
+      await callBedrockRouter(
+        'Generate question',
+        '',
+        500,
+        0.5,
+        mockClient,
+        () => {
+          throw new TypeError('Intentional code bug');
+        }
+      );
+      assert('Expected TypeError to be thrown', false);
+    } catch (err) {
+      assert('Throws TypeError directly', err instanceof TypeError && err.message === 'Intentional code bug');
+      assert('Did not cycle to Nova Lite', mockClient.calls.length === 1);
+    }
+  }
+
+  // ----------------------------------------------------
+  // Test U: Client ValidationException fails fast without fallback
+  // ----------------------------------------------------
+  console.log('\nTest U: Client ValidationException fails fast without fallback');
+  {
+    const mockClient = createMockBedrockClient({
+      'anthropic.claude-3-haiku-20240307-v1:0': () => {
+        const err = new Error('The input parameter was invalid');
+        err.name = 'ValidationException';
+        throw err;
+      },
+      'amazon.nova-lite-v1:0': () => {
+        throw new Error('Should not fallback on ValidationException');
+      },
+    });
+
+    try {
+      await callBedrockRouter('Generate question', '', 500, 0.5, mockClient);
+      assert('Expected ValidationException to fail fast', false);
+    } catch (err) {
+      assert('Fails fast on ValidationException (HTTP 503)', err.statusCode === 503);
+      assert('Did not cycle to Nova Lite', mockClient.calls.length === 1);
+    }
+  }
+
   console.log('\n====================================================');
   console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================');

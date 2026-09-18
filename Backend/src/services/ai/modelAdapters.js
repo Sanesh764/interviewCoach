@@ -58,9 +58,11 @@ export const parseInvokeModelResponse = (modelId, decodedBody) => {
   const result = typeof decodedBody === 'string' ? JSON.parse(decodedBody) : decodedBody;
   let text = '';
   let usage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+  let stopReason = null;
 
   if (modelId.startsWith('anthropic.claude')) {
     text = result.content?.[0]?.text || '';
+    stopReason = result.stop_reason || null;
     if (result.usage) {
       usage = {
         inputTokens: result.usage.input_tokens || 0,
@@ -70,6 +72,7 @@ export const parseInvokeModelResponse = (modelId, decodedBody) => {
     }
   } else if (modelId.startsWith('amazon.nova')) {
     text = result.output?.message?.content?.[0]?.text || '';
+    stopReason = result.stopReason || null;
     if (result.usage) {
       usage = {
         inputTokens: result.usage.inputTokens || 0,
@@ -79,11 +82,13 @@ export const parseInvokeModelResponse = (modelId, decodedBody) => {
     }
   } else if (modelId.startsWith('google.gemma')) {
     text = result.outputs?.[0]?.text || result.generation || result.text || '';
+    stopReason = result.outputs?.[0]?.stop_reason || null;
   } else {
     text = result.completion || result.text || result.output || '';
+    stopReason = result.stop_reason || result.stopReason || null;
   }
 
-  return { text: text.trim(), usage };
+  return { text: text.trim(), usage, stopReason };
 };
 
 /**
@@ -121,6 +126,7 @@ export const invokeBedrockModel = async (
     const latencyMs = Date.now() - startTime;
 
     const text = response.output?.message?.content?.[0]?.text || '';
+    const stopReason = response.stopReason || null;
     const usage = {
       inputTokens: response.usage?.inputTokens || 0,
       outputTokens: response.usage?.outputTokens || 0,
@@ -132,6 +138,7 @@ export const invokeBedrockModel = async (
       usage,
       modelUsed: modelId,
       latencyMs,
+      stopReason,
     };
   } catch (converseError) {
     const errName = converseError.name || '';
@@ -153,6 +160,7 @@ export const invokeBedrockModel = async (
       errName === 'UnrecognizedClientException' ||
       errName === 'ResourceNotFoundException' ||
       errName === 'InvalidSignatureException' ||
+      errName === 'ValidationException' ||
       converseError.statusCode === 429 ||
       errMsg.includes('tokens per day') ||
       errMsg.includes('quota') ||
@@ -181,13 +189,14 @@ export const invokeBedrockModel = async (
     const invokeResponse = await bedrockClient.send(invokeCommand);
     const latencyMs = Date.now() - startTime;
     const decoded = new TextDecoder().decode(invokeResponse.body);
-    const { text, usage } = parseInvokeModelResponse(modelId, decoded);
+    const { text, usage, stopReason } = parseInvokeModelResponse(modelId, decoded);
 
     return {
       text,
       usage,
       modelUsed: modelId,
       latencyMs,
+      stopReason,
     };
   }
 };

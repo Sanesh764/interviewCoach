@@ -1,4 +1,4 @@
-﻿import * as bedrockProvider from './bedrockService.js';
+import * as bedrockProvider from './bedrockService.js';
 
 /**
  * AI Provider Abstraction Layer
@@ -17,10 +17,10 @@
 
 export const aiProvider = {
   // Extract structured candidate information from resume text
-  analyzeResume: (rawText) => bedrockProvider.analyzeResume(rawText),
+  analyzeResume: (rawText, customClient = null) => bedrockProvider.analyzeResume(rawText, customClient),
 
   // Extract structured requirements from target Job Description
-  analyzeJobDescription: (jdText) => bedrockProvider.analyzeJobDescription(jdText),
+  analyzeJobDescription: (jdText, customClient = null) => bedrockProvider.analyzeJobDescription(jdText, customClient),
 
   // Generate question (with optional inline JD analysis)
   generateInterviewQuestion: (params) => bedrockProvider.generateInterviewQuestion(params),
