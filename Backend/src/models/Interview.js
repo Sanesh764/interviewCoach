@@ -99,6 +99,16 @@ const interviewSchema = new mongoose.Schema(
         ref: 'QuestionAnswer',
       },
     ],
+    // Tracks unique AI models that answered requests across this interview session
+    modelsUsed: [
+      {
+        type: String,
+      },
+    ],
+    finalReportModelUsed: {
+      type: String,
+      default: '',
+    },
     completedAt: {
       type: Date,
     },

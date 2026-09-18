@@ -66,6 +66,14 @@ const questionAnswerSchema = new mongoose.Schema(
     missingPoints: [{ type: String }],
     betterAnswer: { type: String, default: '' },
     feedback: { type: String, default: '' },
+    // Tracks the exact Bedrock model that generated/evaluated this question
+    modelUsed: { type: String, default: '' },
+    latencyMs: { type: Number, default: 0 },
+    tokenUsage: {
+      inputTokens: { type: Number, default: 0 },
+      outputTokens: { type: Number, default: 0 },
+      totalTokens: { type: Number, default: 0 },
+    },
   },
   { timestamps: true }
 );

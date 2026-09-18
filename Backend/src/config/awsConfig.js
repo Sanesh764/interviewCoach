@@ -58,10 +58,42 @@ export const pollyClient = new PollyClient(
 );
 
 export const AWS_CONFIG = {
-  region: process.env.AWS_REGION || 'us-east-1',
-  bedrockModelId: process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0',
+  region: process.env.AWS_REGION || 'ap-south-1',
+  bedrockModelId: process.env.BEDROCK_PRIMARY_MODEL || process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0',
+  bedrockPrimaryModel: process.env.BEDROCK_PRIMARY_MODEL || process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0',
+  bedrockFallbackModel1: process.env.BEDROCK_FALLBACK_MODEL_1 || 'amazon.nova-lite-v1:0',
+  bedrockFallbackModel2: process.env.BEDROCK_FALLBACK_MODEL_2 || 'google.gemma-3-27b-it',
   s3BucketName: process.env.S3_BUCKET_NAME || 'interviewcoach-recordings',
   transcribeLanguageCode: process.env.TRANSCRIBE_LANGUAGE_CODE || 'en-US',
   pollyVoiceId: process.env.POLLY_VOICE_ID || 'Joanna',
   pollyEngine: process.env.POLLY_ENGINE || 'neural',
 };
+
+/**
+ * Resolves model ID with required AWS Bedrock cross-region inference profile if applicable
+ * (e.g. In ap-south-1, Nova models require the regional 'apac.' inference profile).
+ */
+export const resolveBedrockModelId = (modelId, region = AWS_CONFIG.region) => {
+  if (!modelId) return modelId;
+  if (region.startsWith('ap-') && modelId === 'amazon.nova-lite-v1:0') {
+    return 'apac.amazon.nova-lite-v1:0';
+  }
+  if (region.startsWith('us-') && modelId === 'amazon.nova-lite-v1:0') {
+    return 'us.amazon.nova-lite-v1:0';
+  }
+  return modelId;
+};
+
+/**
+ * Returns the sequential fallback model chain:
+ * Primary (Claude 3 Haiku) -> Fallback 1 (Nova Lite) -> Fallback 2 (Gemma 3 27B)
+ */
+export const getBedrockModelChain = () => {
+  const primary = resolveBedrockModelId(AWS_CONFIG.bedrockPrimaryModel);
+  const fallback1 = resolveBedrockModelId(AWS_CONFIG.bedrockFallbackModel1);
+  const fallback2 = resolveBedrockModelId(AWS_CONFIG.bedrockFallbackModel2);
+
+  return [primary, fallback1, fallback2].filter(Boolean);
+};
+
+

@@ -37,6 +37,10 @@ export const interviewEngine = {
       experienceRequirements: '',
     };
 
+    const q1ModelUsed = generated._metadata?.modelUsed || '';
+    const q1LatencyMs = generated._metadata?.latencyMs || 0;
+    const q1Usage = generated._metadata?.usage || {};
+
     // Create Interview Document
     const interview = await Interview.create({
       userId,
@@ -51,6 +55,7 @@ export const interviewEngine = {
       jobDescription: compactJD,
       jobDescriptionAnalysis: jdAnalysis,
       questions: [],
+      modelsUsed: q1ModelUsed ? [q1ModelUsed] : [],
     });
 
     // Synthesize audio speech if mode is voice (optional for text)
@@ -64,7 +69,7 @@ export const interviewEngine = {
       }
     }
 
-    // Save Question 1
+    // Save Question 1 with model metadata
     const firstQA = await QuestionAnswer.create({
       interviewId: interview._id,
       questionNumber: 1,
@@ -73,6 +78,13 @@ export const interviewEngine = {
       isFollowUp: false,
       aiSpeechAudioUrl,
       mode,
+      modelUsed: q1ModelUsed,
+      latencyMs: q1LatencyMs,
+      tokenUsage: {
+        inputTokens: q1Usage.inputTokens || 0,
+        outputTokens: q1Usage.outputTokens || 0,
+        totalTokens: q1Usage.totalTokens || 0,
+      },
     });
 
     interview.questions.push(firstQA._id);
@@ -157,6 +169,10 @@ export const interviewEngine = {
       difficultyLevel,
     });
 
+    const modelUsed = combinedResult._metadata?.modelUsed || '';
+    const latencyMs = combinedResult._metadata?.latencyMs || 0;
+    const tokenUsage = combinedResult._metadata?.usage || {};
+
     // 2. Save evaluation to current QuestionAnswer
     currentQA.answer = finalAnswer;
     currentQA.transcript = transcript;
@@ -167,7 +183,19 @@ export const interviewEngine = {
     currentQA.strengths = combinedResult.strengths || [];
     currentQA.missingPoints = combinedResult.missingPoints || [];
     currentQA.betterAnswer = combinedResult.betterAnswer || '';
+    currentQA.modelUsed = modelUsed;
+    currentQA.latencyMs = latencyMs;
+    currentQA.tokenUsage = {
+      inputTokens: tokenUsage.inputTokens || 0,
+      outputTokens: tokenUsage.outputTokens || 0,
+      totalTokens: tokenUsage.totalTokens || 0,
+    };
     await currentQA.save();
+
+    // Track model used across the interview session
+    if (modelUsed && !interview.modelsUsed.includes(modelUsed)) {
+      interview.modelsUsed.push(modelUsed);
+    }
 
     // 3. If this was the final question, conclude interview
     if (isLastQuestion || !combinedResult.nextQuestion) {
@@ -197,6 +225,7 @@ export const interviewEngine = {
       isFollowUp,
       aiSpeechAudioUrl,
       mode: interview.mode,
+      modelUsed,
     });
 
     try {
@@ -233,10 +262,16 @@ export const interviewEngine = {
       questionAnswers: answeredQAs.length > 0 ? answeredQAs : interview.questions,
     });
 
+    const reportModelUsed = finalReport._metadata?.modelUsed || '';
+
     interview.status = 'completed';
     interview.completedAt = new Date();
     interview.overallScore = finalReport.overallScore || 0;
     interview.categoryScores = finalReport.categoryScores || {};
+    interview.finalReportModelUsed = reportModelUsed;
+    if (reportModelUsed && !interview.modelsUsed.includes(reportModelUsed)) {
+      interview.modelsUsed.push(reportModelUsed);
+    }
     interview.report = {
       strengths: finalReport.strengths || [],
       weakAreas: finalReport.weakAreas || [],

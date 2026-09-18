@@ -1,96 +1,290 @@
-import { InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
-import { bedrockClient, AWS_CONFIG, verifyAwsConfiguration } from '../../config/awsConfig.js';
+import { bedrockClient, AWS_CONFIG, getBedrockModelChain, verifyAwsConfiguration } from '../../config/awsConfig.js';
+import { invokeBedrockModel } from './modelAdapters.js';
 
-// Helper to safely extract JSON from LLM response
-const parseJsonResponse = (text) => {
-  try {
-    // 1. Check if enclosed in markdown code fences ```json ... ```
-    const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (match) {
-      return JSON.parse(match[1]);
-    }
-    // 2. Direct parse
-    return JSON.parse(text);
-  } catch (err) {
-    // 3. Fallback: try finding outermost { ... } or [ ... ]
-    const firstBrace = text.indexOf('{');
-    const lastBrace = text.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      const jsonSub = text.substring(firstBrace, lastBrace + 1);
-      return JSON.parse(jsonSub);
-    }
-    throw new Error(`Failed to parse structured JSON from Bedrock response: ${text.substring(0, 150)}...`);
+/**
+ * Classifies whether an AWS Bedrock error is eligible for fallback to another model.
+ * Eligible: Quota limits, rate limits, throttling, transient service unavailabilities.
+ */
+export const isFallbackEligible = (error) => {
+  if (!error) return false;
+  const name = error.name || '';
+  const msg = (error.message || '').toLowerCase();
+  const status = error.statusCode || error.$metadata?.httpStatusCode;
+
+  if (
+    name === 'ThrottlingException' ||
+    name === 'ServiceQuotaExceededException' ||
+    name === 'TooManyRequestsException' ||
+    name === 'ModelNotReadyException' ||
+    name === 'ModelTimeoutException' ||
+    name === 'ServiceUnavailableException' ||
+    name === 'InternalServerException' ||
+    status === 429 ||
+    status === 503
+  ) {
+    return true;
   }
+
+  if (
+    msg.includes('too many tokens per day') ||
+    msg.includes('throttled') ||
+    msg.includes('rate exceeded') ||
+    msg.includes('quota exceeded') ||
+    msg.includes('capacity exceeded') ||
+    msg.includes('service unavailable') ||
+    msg.includes('server is busy') ||
+    msg.includes('temporarily unavailable') ||
+    msg.includes('inference profile') ||
+    msg.includes('on-demand throughput')
+  ) {
+    return true;
+  }
+
+  return false;
 };
 
-// Generic Bedrock invoker supporting Anthropic Claude models
-const callBedrock = async (prompt, systemPrompt = '', maxTokens = 800, temperature = 0.5) => {
+/**
+ * Classifies whether an AWS error is a non-fallback error (IAM, bad credentials, invalid model ID, code bug).
+ * These must FAIL FAST without masking or silently cycling models.
+ */
+export const isNonFallbackError = (error) => {
+  if (!error) return false;
+  const name = error.name || '';
+  const msg = (error.message || '').toLowerCase();
+
+  // If a model is not supported with on-demand throughput in this region, allow fallback to next model!
+  if (msg.includes('inference profile') || msg.includes('on-demand throughput')) {
+    return false;
+  }
+
+  if (
+    name === 'AccessDeniedException' ||
+    name === 'UnauthorizedException' ||
+    name === 'UnrecognizedClientException' ||
+    name === 'InvalidSignatureException' ||
+    name === 'ValidationException' ||
+    name === 'ResourceNotFoundException'
+  ) {
+    return true;
+  }
+
+  if (
+    msg.includes('is not authorized') ||
+    msg.includes('security token') ||
+    msg.includes('credentials') ||
+    msg.includes('resourcenotfound') ||
+    msg.includes('model identifier is invalid')
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+// Helper for jittered exponential backoff
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Robust JSON extraction and validation helper.
+ * Uses hierarchical extraction strategies:
+ * 1. Direct parse (fastest & handles nested markdown fences safely)
+ * 2. Outer markdown fence stripping
+ * 3. Outermost brace isolation ({ ... })
+ * 4. Trailing comma cleanup
+ */
+export const parseJsonResponse = (text, validatorFn = null) => {
+  if (!text || typeof text !== 'string') {
+    throw new Error('Received empty or non-string response from AI model.');
+  }
+
+  const trimmed = text.trim();
+
+  // Strategy 1: Direct JSON parse
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (validatorFn) {
+      const vErr = validatorFn(parsed);
+      if (vErr) throw new Error(vErr);
+    }
+    return parsed;
+  } catch (_) {}
+
+  // Strategy 2: Strip outer markdown fences
+  try {
+    const unfenced = trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsed = JSON.parse(unfenced);
+    if (validatorFn) {
+      const vErr = validatorFn(parsed);
+      if (vErr) throw new Error(vErr);
+    }
+    return parsed;
+  } catch (_) {}
+
+  // Strategy 3: Outermost { ... } extraction
+  const firstBrace = trimmed.indexOf('{');
+  const lastBrace = trimmed.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    const substring = trimmed.substring(firstBrace, lastBrace + 1);
+    try {
+      const parsed = JSON.parse(substring);
+      if (validatorFn) {
+        const vErr = validatorFn(parsed);
+        if (vErr) throw new Error(vErr);
+      }
+      return parsed;
+    } catch (_) {}
+
+    // Strategy 4: Trailing comma cleanup
+    try {
+      const withoutTrailingCommas = substring.replace(/,\s*([}\]])/g, '$1');
+      const parsed = JSON.parse(withoutTrailingCommas);
+      if (validatorFn) {
+        const vErr = validatorFn(parsed);
+        if (vErr) throw new Error(vErr);
+      }
+      return parsed;
+    } catch (_) {}
+  }
+
+  throw new Error(`Failed to parse structured JSON from Bedrock response: ${trimmed.substring(0, 150)}...`);
+};
+
+/**
+ * Sequential Multi-Model Bedrock Fallback Router
+ *
+ * Sequence:
+ *   Claude 3 Haiku (Primary)
+ *         ↓ (if throttled/quota/transient error, after 1 jittered retry)
+ *   Amazon Nova Lite (Fallback 1)
+ *         ↓ (if throttled/quota/transient error, after 1 jittered retry)
+ *   Google Gemma 3 27B (Fallback 2)
+ *
+ * Enforces:
+ *   - Zero parallel calls under normal conditions (single active model).
+ *   - Immediate fail-fast for IAM / Credential / Validation / Model ID bugs.
+ *   - Tracks modelUsed, usage tokens, and latency across attempts.
+ */
+export const callBedrockRouter = async (
+  prompt,
+  systemPrompt = '',
+  maxTokens = 800,
+  temperature = 0.5,
+  customClient = null
+) => {
   verifyAwsConfiguration('Amazon Bedrock');
 
-  const modelId = AWS_CONFIG.bedrockModelId;
+  const client = customClient || bedrockClient;
+  const modelChain = getBedrockModelChain();
+  const attemptHistory = [];
 
-  // Format request body for Anthropic Claude 3 / 3.5 on Amazon Bedrock
-  const requestBody = {
-    anthropic_version: 'bedrock-2023-05-31',
-    max_tokens: maxTokens,
-    temperature,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-  };
+  for (let i = 0; i < modelChain.length; i++) {
+    const modelId = modelChain[i];
+    const isLastModel = i === modelChain.length - 1;
 
-  if (systemPrompt) {
-    requestBody.system = systemPrompt;
+    // Up to 2 attempts on the same model (initial attempt + 1 short jittered retry for transient errors)
+    for (let modelAttempt = 1; modelAttempt <= 2; modelAttempt++) {
+      const startTime = Date.now();
+      try {
+        console.log(`[AI Router] Attempting model: ${modelId} (model attempt ${modelAttempt})`);
+
+        const result = await invokeBedrockModel(client, modelId, {
+          prompt,
+          systemPrompt,
+          maxTokens,
+          temperature,
+        });
+
+        console.log(
+          `[AI Router] Model ${modelId} succeeded (latency: ${result.latencyMs}ms, tokens: ${result.usage.totalTokens})`
+        );
+
+        attemptHistory.push({
+          modelId,
+          success: true,
+          latencyMs: result.latencyMs,
+          usage: result.usage,
+        });
+
+        return {
+          text: result.text,
+          modelUsed: modelId,
+          usage: result.usage,
+          latencyMs: result.latencyMs,
+          attemptHistory,
+        };
+      } catch (error) {
+        const latencyMs = Date.now() - startTime;
+        console.error(`[AI Router] Model ${modelId} attempt ${modelAttempt} failed:`, error.name || error.message);
+
+        attemptHistory.push({
+          modelId,
+          success: false,
+          errorName: error.name,
+          errorMessage: error.message,
+          latencyMs,
+        });
+
+        // 1. Check for non-fallback errors (IAM, credentials, bad model ID, client code validation)
+        if (isNonFallbackError(error)) {
+          console.error(
+            `[AI Router] Fatal non-fallback error encountered on ${modelId} (${error.name}). Aborting routing immediately.`
+          );
+          const fatalErr = new Error('AI interview service is temporarily unavailable. Please try again later.');
+          fatalErr.statusCode = 503;
+          fatalErr.name = error.name || 'ServiceUnavailable';
+          fatalErr.originalError = error;
+          throw fatalErr;
+        }
+
+        // 2. Check if error is eligible for fallback
+        if (!isFallbackEligible(error)) {
+          // Unrecognized error: do not silently switch models
+          console.error(`[AI Router] Non-eligible error encountered on ${modelId}:`, error);
+          throw error;
+        }
+
+        // 3. If modelAttempt === 1 and not fatal, execute 1 short retry with jitter
+        if (modelAttempt === 1) {
+          const jitterMs = 200 + Math.floor(Math.random() * 150);
+          console.log(`[AI Router] Transient error on ${modelId}. Retrying once in ${jitterMs}ms...`);
+          await sleep(jitterMs);
+          continue;
+        }
+
+        // 4. Model failed twice with fallback-eligible error
+        if (!isLastModel) {
+          const nextModelId = modelChain[i + 1];
+          console.warn(
+            `[AI Router] Model ${modelId} capacity/quota exhausted. Transitioning to fallback model: ${nextModelId}`
+          );
+          break; // Break inner loop to move to next model in chain
+        } else {
+          console.error(`[AI Router] All models in the fallback chain have been exhausted.`);
+        }
+      }
+    }
   }
 
-  const command = new InvokeModelCommand({
-    modelId,
-    contentType: 'application/json',
-    accept: 'application/json',
-    body: JSON.stringify(requestBody),
-  });
-
-  try {
-    const response = await bedrockClient.send(command);
-    const decoded = new TextDecoder().decode(response.body);
-    const result = JSON.parse(decoded);
-
-    // Extract text content from Claude's response structure
-    const outputText = result.content?.[0]?.text || '';
-    return outputText.trim();
-  } catch (error) {
-    console.error('[Amazon Bedrock Invocation Error]', error);
-    if (error.name === 'ThrottlingException' || error.statusCode === 429) {
-      const err = new Error(
-        'AI interview service is temporarily unavailable because the AI provider has reached its current usage limit. Please try again later.'
-      );
-      err.statusCode = 429;
-      err.name = 'ThrottlingException';
-      throw err;
-    }
-    if (
-      error.name === 'AccessDeniedException' ||
-      error.name === 'ValidationException' ||
-      error.message?.includes('credentials') ||
-      error.message?.includes('not found')
-    ) {
-      const err = new Error(
-        'AI interview service is temporarily unavailable. Please try again later.'
-      );
-      err.statusCode = 503;
-      err.name = 'ServiceUnavailable';
-      throw err;
-    }
-    throw error;
-  }
+  // All models in the chain failed
+  const finalError = new Error(
+    'AI interview service is temporarily unavailable because the AI provider has reached its current usage limit. Please try again later.'
+  );
+  finalError.statusCode = 429;
+  finalError.name = 'ThrottlingException';
+  finalError.attempts = attemptHistory;
+  throw finalError;
 };
 
+// Aliased helper matching existing call signature
+export const callBedrock = async (prompt, systemPrompt = '', maxTokens = 800, temperature = 0.5) => {
+  const result = await callBedrockRouter(prompt, systemPrompt, maxTokens, temperature);
+  return result.text;
+};
+
+// ==========================================
 // 1. Analyze Resume
+// ==========================================
 export const analyzeResume = async (rawText) => {
-  // Truncate raw text to maximum 3000 chars to avoid exhausting daily token quota on oversized PDFs
   const compactText = (rawText || '').substring(0, 3000);
 
   const prompt = `You are an expert technical recruiter and resume analyzer.
@@ -108,15 +302,31 @@ Resume Text:
 ${compactText}
 `;
 
-  const responseText = await callBedrock(
+  const routerResult = await callBedrockRouter(
     prompt,
     'You are a precise technical resume extractor. Output valid JSON only with no conversational text.',
-    600
+    600,
+    0.3
   );
-  return parseJsonResponse(responseText);
+
+  const parsed = parseJsonResponse(routerResult.text, (data) => {
+    if (!Array.isArray(data.skills)) return 'Missing "skills" array';
+    return null;
+  });
+
+  return {
+    ...parsed,
+    _metadata: {
+      modelUsed: routerResult.modelUsed,
+      usage: routerResult.usage,
+      latencyMs: routerResult.latencyMs,
+    },
+  };
 };
 
+// ==========================================
 // 2. Analyze Job Description
+// ==========================================
 export const analyzeJobDescription = async (jdText) => {
   const prompt = `You are a technical hiring manager.
 Analyze the following Job Description (JD) and extract the core requirements and keywords.
@@ -133,14 +343,31 @@ Job Description:
 ${jdText}
 `;
 
-  const responseText = await callBedrock(
+  const routerResult = await callBedrockRouter(
     prompt,
-    'You are an expert hiring manager analyzing job descriptions. Output valid JSON only.'
+    'You are an expert hiring manager analyzing job descriptions. Output valid JSON only.',
+    600,
+    0.3
   );
-  return parseJsonResponse(responseText);
+
+  const parsed = parseJsonResponse(routerResult.text, (data) => {
+    if (!Array.isArray(data.requiredSkills)) return 'Missing "requiredSkills" array';
+    return null;
+  });
+
+  return {
+    ...parsed,
+    _metadata: {
+      modelUsed: routerResult.modelUsed,
+      usage: routerResult.usage,
+      latencyMs: routerResult.latencyMs,
+    },
+  };
 };
 
-// 3. Generate Interview Question (with optional inline JD analysis in a single Bedrock call)
+// ==========================================
+// 3. Generate Interview Question (with optional inline JD analysis)
+// ==========================================
 export const generateInterviewQuestion = async ({
   role,
   experienceLevel,
@@ -221,15 +448,31 @@ Return ONLY a valid JSON object in this exact schema:
 }
 `;
 
-  const responseText = await callBedrock(
+  const routerResult = await callBedrockRouter(
     prompt,
     'You are an expert AI interviewer. Output only valid JSON.',
-    hasJD && !jobDescriptionAnalysis ? 550 : 450
+    hasJD && !jobDescriptionAnalysis ? 550 : 450,
+    0.5
   );
-  return parseJsonResponse(responseText);
+
+  const parsed = parseJsonResponse(routerResult.text, (data) => {
+    if (!data.question || typeof data.question !== 'string') return 'Missing or invalid "question" field';
+    return null;
+  });
+
+  return {
+    ...parsed,
+    _metadata: {
+      modelUsed: routerResult.modelUsed,
+      usage: routerResult.usage,
+      latencyMs: routerResult.latencyMs,
+    },
+  };
 };
 
-// 4. Combined Evaluation & Next Question Generation (Single Bedrock Invocation)
+// ==========================================
+// 4. Combined Evaluation & Next Question Generation
+// ==========================================
 export const processAnswerUnified = async ({
   question,
   answer,
@@ -305,16 +548,32 @@ Return ONLY a valid JSON object in this exact schema:
 }
 `;
 
-  const responseText = await callBedrock(
+  const routerResult = await callBedrockRouter(
     prompt,
     'You are an expert interviewer and evaluator. Output valid JSON only.',
-    850
+    850,
+    0.5
   );
-  return parseJsonResponse(responseText);
+
+  const parsed = parseJsonResponse(routerResult.text, (data) => {
+    if (!data.evaluation || typeof data.evaluation !== 'object') return 'Missing "evaluation" object';
+    if (!data.scores || typeof data.scores !== 'object') return 'Missing "scores" object';
+    return null;
+  });
+
+  return {
+    ...parsed,
+    _metadata: {
+      modelUsed: routerResult.modelUsed,
+      usage: routerResult.usage,
+      latencyMs: routerResult.latencyMs,
+    },
+  };
 };
 
-
-// 6. Generate Final Report & 7-Day Improvement Plan
+// ==========================================
+// 5. Generate Final Report & 7-Day Improvement Plan
+// ==========================================
 export const generateFinalReport = async ({
   role,
   experienceLevel,
@@ -389,10 +648,25 @@ Return ONLY a valid JSON object in this exact schema:
 }
 `;
 
-  const responseText = await callBedrock(
+  const routerResult = await callBedrockRouter(
     prompt,
     'You are a senior hiring director synthesizing an actionable interview report. Output only valid JSON.',
-    1200
+    1200,
+    0.4
   );
-  return parseJsonResponse(responseText);
+
+  const parsed = parseJsonResponse(routerResult.text, (data) => {
+    if (typeof data.overallScore !== 'number') return 'Missing or non-numeric "overallScore"';
+    if (!data.categoryScores || typeof data.categoryScores !== 'object') return 'Missing "categoryScores" object';
+    return null;
+  });
+
+  return {
+    ...parsed,
+    _metadata: {
+      modelUsed: routerResult.modelUsed,
+      usage: routerResult.usage,
+      latencyMs: routerResult.latencyMs,
+    },
+  };
 };

@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node qa_audit_test.js"
+    "test": "node qa_audit_test.js",
+    "test:fallback": "node tests/model_fallback_test.js",
+    "test:e2e": "node tests/e2e_interview_flow_test.js",
+    "test:all": "node tests/model_fallback_test.js && node tests/e2e_interview_flow_test.js && node qa_audit_test.js"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.758.0",

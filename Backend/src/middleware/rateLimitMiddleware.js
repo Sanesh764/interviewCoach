@@ -12,8 +12,8 @@ setInterval(() => {
 }, 10 * 60 * 1000);
 
 export const authRateLimiter = (req, res, next) => {
-  // Bypass rate limiting during automated test suites
-  if (process.env.NODE_ENV === 'test' || req.headers['x-qa-audit'] === 'true') {
+  // Bypass rate limiting in development mode or during automated test suites
+  if (process.env.NODE_ENV !== 'production' || req.headers['x-qa-audit'] === 'true') {
     return next();
   }
 

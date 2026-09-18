@@ -116,7 +116,7 @@ async function runQAAudit() {
   try {
     const res = await fetch(`${BASE_URL}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-qa-audit': 'true' },
       body: JSON.stringify({ email: userA_email, password: 'wrongpassword' }),
     });
     assert('3f. Auth: Rejects invalid password on login (401)', res.status === 401);
@@ -128,7 +128,7 @@ async function runQAAudit() {
   try {
     const res = await fetch(`${BASE_URL}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-qa-audit': 'true' },
       body: JSON.stringify({ email: userA_email, password: 'password123' }),
     });
     const data = await res.json();

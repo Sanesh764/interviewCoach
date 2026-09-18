@@ -32,6 +32,12 @@ export const InterviewRoomPage = () => {
   // Fetch initial session
   useEffect(() => {
     const fetchSession = async () => {
+      if (!id || id === 'undefined') {
+        setError('Invalid interview session identifier. Please return to the dashboard.');
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         const data = await interviewService.getInterview(id);

@@ -130,7 +130,7 @@ export const InterviewSetupPage = () => {
     setIsSubmitting(true);
 
     try {
-      const interview = await interviewService.createInterview({
+      const response = await interviewService.createInterview({
         role: targetRole,
         experienceLevel,
         mode,
@@ -140,11 +140,22 @@ export const InterviewSetupPage = () => {
         resumeData: resumeData || null,
       });
 
-      navigate(`/interview/room/${interview._id}`);
+      const interviewId =
+        response?.interview?._id ||
+        response?.interview?.id ||
+        response?._id ||
+        response?.id;
+
+      if (!interviewId) {
+        throw new Error('Interview created, but failed to retrieve session ID from server response.');
+      }
+
+      navigate(`/interview/room/${interviewId}`);
     } catch (err) {
       console.error('[Start Interview Error]', err);
       setError(
         err.response?.data?.message ||
+        err.message ||
           'AI interview service is temporarily unavailable. Please try again later.'
       );
       setIsSubmitting(false);

@@ -37,6 +37,8 @@ export const createInterview = async (req, res, next) => {
       success: true,
       interview: session.interview,
       currentQuestion: session.currentQuestion,
+      _id: session.interview._id,
+      id: session.interview._id,
     });
   } catch (error) {
     next(error);
