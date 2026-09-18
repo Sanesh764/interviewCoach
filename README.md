@@ -1,345 +1,340 @@
-# 🏆 InterviewCoach AI — AWS-Powered Adaptive Mock Interview Platform
+# InterviewCoach AI
 
-<div align="center">
+> **Practice smarter. Interview better.**
 
-<br />
+InterviewCoach AI is a personal AI interviewer that helps candidates practice realistic interviews, identify their weaknesses, and improve through personalized feedback.
 
-```
-  ___       _             _                 ____                 _        _    ___ 
- |_ _|_ __ | |_ ___ _ ____(_) _____      __ / ___|___   __ _  ___| |__    / \  |_ _|
-  | || '_ \| __/ _ \ '__\ \ / / _ \ \ /\ / / |   / _ \ / _` |/ __| '_ \  / _ \  | | 
-  | || | | | ||  __/ |   \ V /  __/\ V  V /| |__| (_) | (_| | (__| | | |/ ___ \ | | 
- |___|_| |_|\__\___|_|    \_/ \___| \_/\_/  \____\___/ \__,_|\___|_| |_/_/   \_\___|
-```
-
-### **Practice Smarter. Interview Better. Get Hired.**
-
-An enterprise-grade, AWS-native AI interview preparation platform that conducts realistic, multi-turn technical & behavioral interviews tailored to a candidate's resume and target job description.<br />
-Engineered with an **AWS Bedrock 3-Model Fallback Router**, **Amazon Transcribe**, **Amazon Polly Neural**, and **Amazon S3**.
-
-<br />
-
-[![Hackathon Ready](https://img.shields.io/badge/Hackathon-Ready%20Project-FF4B4B?style=for-the-badge&logo=rocket&logoColor=white)](https://github.com/Sanesh764/interviewCoach)
-[![AWS Bedrock](https://img.shields.io/badge/AWS-Bedrock%20Multi--Model-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/bedrock/)
-[![AWS Polly](https://img.shields.io/badge/AWS-Polly%20Neural-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/polly/)
-[![AWS Transcribe](https://img.shields.io/badge/AWS-Transcribe-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/transcribe/)
-[![AWS S3](https://img.shields.io/badge/AWS-S3%20Storage-569A31?style=for-the-badge&logo=amazon-s3&logoColor=white)](https://aws.amazon.com/s3/)
-[![Tests](https://img.shields.io/badge/QA%20Tests-91%2F91%20Passing%20(100%25)-brightgreen?style=for-the-badge&logo=checkmarx&logoColor=white)](https://github.com/Sanesh764/interviewCoach)
-[![React](https://img.shields.io/badge/Frontend-React%2019%20%2B%20Vite-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![Node.js](https://img.shields.io/badge/Backend-Node%2018%20%2B%20Express-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Database](https://img.shields.io/badge/Database-MongoDB%20Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-
-<br />
-
-[⚡ 60-Second Overview for Judges](#-60-second-judges-executive-summary) • [☁️ AWS Architecture Showcase](#%EF%B8%8F-aws-cloud-architecture--service-showcase) • [🛡️ Multi-Model Fallback](#-zero-downtime-aws-bedrock-multi-model-fallback-router) • [🎙️ Voice Loop](#%EF%B8%8F-aws-voice-pipeline-architecture) • [🧪 Test Verification](#-automated-testing--hackathon-verification-9191-passing) • [🚀 Quickstart](#-quickstart-guide-run-in-3-minutes)
-
-</div>
+Built for college students, freshers, and job seekers, InterviewCoach AI replaces static question lists and generic chatbots with an adaptive, context-grounded interview workflow powered by **Amazon Web Services (AWS)**.
 
 ---
 
-## ⚡ 60-Second Judges' Executive Summary
+## Table of Contents
 
-### 🎯 The Problem
-Over **30 million college students, freshers, and job seekers** practice for high-stakes interviews using static question banks or generic AI chatbots. 
-- **Chatbots talk too much and lack interview discipline**: They do not drive the conversation, they don't challenge weak answers, and they don't simulate the pressure of an interview room.
-- **Disconnected from candidate background**: Generic tools ask standard textbook questions rather than probing past projects or technologies listed on the candidate's resume.
-- **No voice simulation**: 90% of real interviews are conducted verbally, yet candidates only practice by typing.
-- **Vague feedback**: Candidates receive superficial praise instead of actionable scoring and day-by-day remediation.
-
-### 💡 The Solution: InterviewCoach AI
-InterviewCoach AI orchestrates a realistic, closed-loop interview engineering lifecycle:
-1. **Resume & JD Context Ingestion**: Extracts candidate skills from PDF/DOCX resumes (`pdf-parse` / `mammoth`) and parses target Job Descriptions into structured competencies using Amazon Bedrock.
-2. **Dual-Mode Interview Room**: Candidates choose **Interactive Text** or **Hands-Free Voice** (transcribed via Amazon Transcribe, spoken via Amazon Polly Neural).
-3. **Dynamic Probing & Adaptive Difficulty**: The AI evaluates every response in real time. If an answer is vague or shallow, it dynamically triggers a **follow-up probe** before moving forward.
-4. **99.9% Uptime Multi-Model Fallback**: A resilient AWS Bedrock router sequentially fails over (**Claude 3 Haiku $\rightarrow$ Nova Lite $\rightarrow$ Gemma 3 27B**) to eliminate daily token quotas and rate-limiting during high-concurrency demos.
-5. **Post-Interview Diagnostic Report & 7-Day Plan**: Generates an exhaustive report with 0–10 category scoring, itemized strengths and omissions, exemplary model answers, and a **7-Day Personalized Study Plan**.
+- [1. Executive Summary](#1-executive-summary)
+- [2. The Problem & The Solution](#2-the-problem--the-solution)
+- [3. System Architecture](#3-system-architecture)
+- [4. Why AWS? Infrastructure & Service Deep Dive](#4-why-aws-infrastructure--service-deep-dive)
+- [5. Amazon Bedrock Multi-Model Fallback Router](#5-amazon-bedrock-multi-model-fallback-router)
+- [6. Voice Interview Pipeline](#6-voice-interview-pipeline)
+- [7. Adaptive Interview Flow & Follow-Up Probing](#7-adaptive-interview-flow--follow-up-probing)
+- [8. Resume & Job Description Context Grounding](#8-resume--job-description-context-grounding)
+- [9. Multi-Metric Answer Evaluation](#9-multi-metric-answer-evaluation)
+- [10. Post-Interview Diagnostic Report & 7-Day Plan](#10-post-interview-diagnostic-report--7-day-plan)
+- [11. Technology Stack](#11-technology-stack)
+- [12. Local Setup & Quickstart](#12-local-setup--quickstart)
+- [13. Security & Engineering Standards](#13-security--engineering-standards)
+- [14. License](#14-license)
 
 ---
 
-## ☁️ AWS Cloud Architecture & Service Showcase
+## 1. Executive Summary
 
-InterviewCoach AI is built native to **Amazon Web Services (AWS)** in the **`ap-south-1` (Asia Pacific - Mumbai)** region, utilizing the official **AWS SDK for JavaScript v3** (`@aws-sdk/*`).
+Most interview preparation tools rely on static, memorized question banks or unstructured chatbot conversations. In contrast, InterviewCoach AI orchestrates a closed-loop engineering cycle:
+
+```text
+Practice → Interview → Feedback → Weakness Detection → Personalized Learning Plan → Practice Again
+```
+
+Instead of asking disconnected questions, the platform:
+- Ingests the candidate's actual **resume** (PDF/DOCX) and target **job description** to ask role-relevant questions.
+- Dynamically decides when to ask a **probing follow-up question** if an answer is incomplete or vague.
+- Modulates question complexity in real time based on **adaptive difficulty tiers** (`foundational`, `balanced`, `advanced`).
+- Supports both **Text** and **Voice** modes through a unified interview engine, allowing mid-session switching.
+- Incorporates a **resilient multi-model Bedrock fallback router** (Claude 3 Haiku $\rightarrow$ Nova Lite $\rightarrow$ Gemma 3 27B) to handle model quotas and transient throttling in `ap-south-1`.
+- Concludes each session with an objective **diagnostic evaluation** and a **7-Day Personalized Improvement Plan**.
+
+---
+
+## 2. The Problem & The Solution
+
+| Problem in Existing Preparation | How InterviewCoach AI Solves It |
+|---|---|
+| **Chatbots talk too much**; user drives the conversation rather than experiencing interview pressure. | **AI Interviewer drives the session**: Introduces questions, waits for answers, enforces interview cadence, and evaluates performance. |
+| **Generic, ungrounded questions** that ignore candidate background. | **Resume & JD Context Ingestion**: Uses extracted projects, technologies, and JD requirements to tailor questions directly to the candidate. |
+| **No verbal practice**: 90% of interviews are verbal, yet candidates practice by typing or reading. | **AWS Voice Pipeline**: Candidates speak into the browser; audio is transcribed via Amazon Transcribe and answered with Amazon Polly neural speech. |
+| **Superficial praise or vague feedback** ("Good job, improve communication"). | **Structured Multi-Metric Evaluation**: 0–10 scores across technical accuracy, depth, clarity, relevance, and completeness, with exemplary model answers. |
+| **No clear remediation roadmap**. | **Personalized 7-Day Curriculum**: Automatically targets candidate's identified weak areas with day-by-day learning tasks. |
+
+---
+
+## 3. System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Client Presentation Tier (React 19 + Vite + Tailwind CSS)"]
-        UI["Dark-First SaaS UI (#070b14)"]
-        Setup["Context Wizard (Role, Resume, JD, Personality)"]
-        Room["Interview Room (Text & MediaRecorder Voice)"]
-        ReportUI["Diagnostic Report & 7-Day Action Plan"]
-    end
+    A[React Frontend] --> B[Node.js / Express API]
+    B --> C[Interview Engine]
+    C --> D[Bedrock Model Router]
 
-    subgraph API ["Application & Security Tier (Node.js + Express)"]
-        Auth["JWT Bearer Auth & IDOR Ownership Guard"]
-        Upload["Multer Memory Buffer (10MB Strict Limit)"]
-        Engine["Interview Orchestrator (Single-Turn Token Engine)"]
-        VoiceOrch["Voice Pipeline Handler & Cleanup"]
-    end
+    D --> E[Claude 3 Haiku]
+    D --> F[Nova Lite]
+    D --> G[Gemma 3 27B]
 
-    subgraph AWS ["Amazon Web Services Infrastructure (ap-south-1)"]
-        subgraph BedrockCluster ["Amazon Bedrock Multi-Model Router"]
-            Claude["Primary Engine:\nAnthropic Claude 3 Haiku\nanthropic.claude-3-haiku-20240307-v1:0"]
-            Nova["Fallback 1 (APAC Profile):\nAmazon Nova Lite\napac.amazon.nova-lite-v1:0"]
-            Gemma["Fallback 2 (Self-Contained):\nGoogle Gemma 3 27B\ngoogle.gemma-3-27b-it"]
-            Claude -->|Quota / Throttle / 503| Nova
-            Nova -->|Quota / Throttle / 503| Gemma
-        end
+    B --> H[(MongoDB)]
+    B --> I[Amazon S3]
 
-        subgraph S3Bucket ["Amazon S3 Storage (interviewcoach1)"]
-            S3Resumes["/resumes (Candidate PDF/DOCX)"]
-            S3Audio["/voice-answers (Candidate Recordings)"]
-            S3Polly["/polly (Synthesized Neural MP3s)"]
-        end
+    J[Voice Recording] --> I
+    I --> K[Amazon Transcribe]
+    K --> C
 
-        Transcribe["Amazon Transcribe\n(Speech-to-Text en-US Engine)"]
-        Polly["Amazon Polly\n(Joanna Neural Voice Engine)"]
-    end
-
-    subgraph Persistence ["Persistence Tier (MongoDB Atlas)"]
-        DB[("MongoDB Atlas Database\nUsers • Interviews • QuestionAnswers")]
-    end
-
-    %% Wiring
-    UI --> API
-    API --> BedrockCluster
-    API --> S3Bucket
-    VoiceOrch --> Transcribe
-    VoiceOrch --> Polly
-    Transcribe -.->|Fetch Audio| S3Audio
-    Polly -.->|Store MP3| S3Polly
-    API --> DB
+    C --> L[Amazon Polly]
+    L --> A
 ```
 
-### Deep Dive: AWS Services & Components Used
-
-| AWS Service | SDK v3 Package | Configuration & Model Identifier | Architectural Role & Implementation Details |
-|---|---|---|---|
-| **Amazon Bedrock (Primary)** | `@aws-sdk/client-bedrock-runtime` | `anthropic.claude-3-haiku-20240307-v1:0`<br />*Region: `ap-south-1`* | **Core Intelligence Engine**: Context-aware question generation, structured JD parsing, 0–10 answer evaluation, dynamic follow-up determination, and 7-day study curriculum synthesis. Invoked using `InvokeModelCommand` with strict JSON schema enforcement. |
-| **Amazon Bedrock (Fallback 1)** | `@aws-sdk/client-bedrock-runtime` | `apac.amazon.nova-lite-v1:0`<br />*Inference Profile: APAC* | **High-Throughput Fallback**: Cross-region inference profile that automatically absorbs traffic when Claude hits token quota limits or throttles. Ultra-low latency and highly cost-efficient. |
-| **Amazon Bedrock (Fallback 2)** | `@aws-sdk/client-bedrock-runtime` | `google.gemma-3-27b-it`<br />*Region: `ap-south-1`* | **Safety-Net Fallback**: High-parameter open-weights model hosted directly inside Bedrock, providing architectural diversity if proprietary model capacity is constrained. |
-| **Amazon S3** | `@aws-sdk/client-s3`<br />`@aws-sdk/s3-request-presigner` | Bucket: `interviewcoach1`<br />*Encryption: AES-256 (SSE-S3)* | **Private Cloud Storage**: Secure off-database storage for candidate resume documents, recorded voice responses, and generated Polly MP3s. Kept 100% private with **SigV4 Presigned URLs (1-hour TTL)**. |
-| **Amazon Transcribe** | `@aws-sdk/client-transcribe` | `StartTranscriptionJobCommand`<br />`GetTranscriptionJobCommand` | **Speech-to-Text Pipeline**: Asynchronously transcribes verbal candidate answers. Features automated MIME-type sanitization and immediate job deletion (`DeleteTranscriptionJobCommand`) on completion to avoid AWS job collisions. |
-| **Amazon Polly** | `@aws-sdk/client-polly` | Voice: `Joanna`<br />Engine: `neural` (Neural TTS) | **Human-Like Audio Synthesis**: Converts AI-generated questions into natural human speech. Returns presigned S3 audio URLs with automatic in-memory Base64 streaming fallback. |
+### Architecture Highlights:
+1. **Separation of Presentation & Business Logic**: React client interacts with the Express backend via REST endpoints protected by JWT authentication and IDOR session-ownership checks.
+2. **Unified Interview Engine**: Both Text and Voice modes execute through the exact same backend engine (`interviewEngine.js`). Once voice answers are transcribed, scoring criteria, follow-up logic, and difficulty adjustments remain identical.
+3. **Dedicated Cloud Storage**: Binary assets (PDF/DOCX resumes, candidate voice recordings, synthesized speech) are offloaded to Amazon S3, keeping MongoDB documents lean and query latency low.
 
 ---
 
-## 🛡️ Zero-Downtime AWS Bedrock Multi-Model Fallback Router
+## 4. Why AWS? Infrastructure & Service Deep Dive
 
-### Why This Was Built
-In live hackathons and production AI demos, relying on a single foundation model frequently triggers **`ThrottlingException`** (rate limits) or **`ServiceQuotaExceededException`** (*"Too many tokens per day, please wait before trying again"*). 
+InterviewCoach AI integrates AWS cloud services to handle compute-intensive AI, media storage, speech recognition, and speech synthesis natively in the `ap-south-1` (Asia Pacific - Mumbai) region:
 
-Rather than failing the user session or asking them to wait, InterviewCoach AI incorporates an **automated, sequential fallback router**:
+| AWS Service | Official SDK Package | Role in InterviewCoach AI & Why It Was Chosen |
+|---|---|---|
+| **Amazon Bedrock** | `@aws-sdk/client-bedrock-runtime` | **Cognitive Intelligence & Reasoning Engine**<br />Powers JD structured analysis, dynamic question synthesis, multi-dimensional answer evaluation, follow-up decisions, and final diagnostic report generation. Chosen for managed enterprise foundation models, predictable latency, and unified API access across model providers. |
+| **Amazon S3** | `@aws-sdk/client-s3`<br />`@aws-sdk/s3-request-presigner` | **Private Binary Storage & Secure Audio Streaming**<br />Stores candidate resume documents, recorded voice responses, and synthesized audio files in a private bucket (`interviewcoach1`). Playback is secured via short-lived AWS SigV4 presigned URLs (1-hour TTL) without making files publicly accessible. |
+| **Amazon Transcribe** | `@aws-sdk/client-transcribe` | **Asynchronous Speech-to-Text Processing**<br />Transcribes candidate voice recordings accurately into text for the interview engine. Handled asynchronously with automated cleanup (`DeleteTranscriptionJobCommand`) on completion to avoid lingering AWS resources. |
+| **Amazon Polly** | `@aws-sdk/client-polly` | **Conversational Speech Synthesis**<br />Converts AI-generated question text into natural, lifelike spoken audio using the **`Joanna` Neural** voice engine, providing a realistic auditory interview experience. |
 
-```
-Candidate Answer 
+---
+
+## 5. Amazon Bedrock Multi-Model Fallback Router
+
+In production AI applications, foundation models can experience rate limits (`ThrottlingException`), daily token quota exhaustion (`ServiceQuotaExceededException`), or transient availability drops (HTTP 429/503).
+
+To mitigate this, InterviewCoach AI incorporates an **automated sequential Bedrock fallback router**:
+
+```text
+Candidate Request
        │
        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  Attempt 1: Anthropic Claude 3 Haiku                         │
+│  Bedrock Model Router                                        │
+│  Region: ap-south-1                                          │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Primary Model: Anthropic Claude 3 Haiku                     │
 │  [anthropic.claude-3-haiku-20240307-v1:0]                    │
 └──────────────────────────────┬───────────────────────────────┘
-                               │ ❌ Daily Quota / Throttle / 503
+                               │ (Eligible quota / throttle / 503 error)
                                ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  Attempt 2: Amazon Nova Lite                                 │
+│  Fallback Model 1: Amazon Nova Lite                          │
 │  [apac.amazon.nova-lite-v1:0 (Cross-Region Profile)]         │
 └──────────────────────────────┬───────────────────────────────┘
-                               │ ❌ Regional Throttle / 503
+                               │ (Eligible quota / throttle / 503 error)
                                ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  Attempt 3: Google Gemma 3 27B                               │
+│  Fallback Model 2: Google Gemma 3 27B                        │
 │  [google.gemma-3-27b-it]                                     │
 └──────────────────────────────┬───────────────────────────────┘
-                               │ ✅ Success!
+                               │
                                ▼
-      Returns Structured JSON + Logs Model Used + Emits Response
+            Normalized Structured JSON Response
 ```
 
-### Key Engineering Safeguards:
-- **Zero Duplicate Billing**: Under normal operation, **only the primary model is invoked**. Fallback models are activated sequentially *only* if the preceding model encounters a capacity/quota exception.
-- **Fail-Fast Error Classification**: Configuration, credentials, and client errors (`AccessDeniedException`, `UnrecognizedClientException`, `ValidationException`) fail fast immediately without wasteful cycling.
-- **Jittered Retry Policy**: Exactly 1 short jittered retry (200–400ms) before transitioning to the next model to ride out instantaneous network blips.
-- **Granular Session Observability**: Every question tracks `modelUsed`, `latencyMs`, and `tokenUsage`, while the overall session records the complete array of models involved (`interview.modelsUsed: [String]`).
+### Router Implementation Details:
+- **Sequential Execution (Zero Redundant Invocations)**: Under normal conditions, **only one model is called**. Fallback models are activated sequentially *only* if the preceding model encounters an eligible capacity or quota exception.
+- **Fail-Fast Error Handling**: Non-transient errors (such as `AccessDeniedException`, `UnrecognizedClientException`, `ValidationException`, or `ResourceNotFoundException`) fail fast immediately without cycling through fallback models.
+- **Jittered Retry Policy**: Before transitioning to the next model, the router attempts one short jittered retry (200–400ms) to resolve instantaneous network blips.
+- **Resilient 4-Tier JSON Extraction**: Bedrock responses pass through a multi-tier parser (direct parse $\rightarrow$ outer markdown fence stripping $\rightarrow$ outermost brace isolation $\rightarrow$ trailing comma cleanup) to guarantee valid JSON extraction even if the model surrounds output with commentary.
+- **Granular Observability**: The interview session records every model that participated in `interview.modelsUsed: [String]`, while each question tracks its specific `modelUsed`, `latencyMs`, and token counts.
+
+> **Note on Guarantees**: Fallback routing improves resilience against model-specific quota and temporary throttling failures, but does not claim zero cost on failed upstream requests or unconditional availability if all configured models are unavailable.
 
 ---
 
-## 🎙️ AWS Voice Pipeline Architecture
+## 6. Voice Interview Pipeline
 
-The voice practice loop combines browser-native `MediaRecorder` with cloud-grade AWS services:
+The voice interview workflow is designed for deterministic reliability without requiring complex or fragile WebRTC streaming connections:
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Candidate as Candidate Browser
-    participant Express as Express API Server
-    participant S3 as Amazon S3 (interviewcoach1)
-    participant Transcribe as Amazon Transcribe
-    participant Bedrock as Amazon Bedrock (Router)
-    participant Polly as Amazon Polly (Joanna)
-
-    Candidate->>Candidate: Records verbal answer via MediaRecorder (audio/webm)
-    Candidate->>Express: POST /api/interviews/:id/voice-answer (multipart/form-data)
-    Express->>S3: Upload raw audio to /voice-answers/
-    Express->>Transcribe: StartTranscriptionJobCommand (en-US, clean MIME format)
-    loop Poll Job Status (1.5s interval, max 90s)
-        Express->>Transcribe: GetTranscriptionJobCommand
-    end
-    Transcribe-->>Express: Transcription Complete (Parsed Transcript Text)
-    Note over Express,Transcribe: DeleteTranscriptionJobCommand executes immediately
-    Express->>Bedrock: Single Call: Evaluate Answer + Generate Q(n+1)
-    Bedrock-->>Express: Structured JSON (Scores, Feedback, Next Question)
-    Express->>Polly: SynthesizeSpeechCommand (Joanna Neural MP3)
-    Polly-->>Express: High-Fidelity Audio Stream
-    Express->>S3: Save to /polly/ & generate SigV4 Presigned URL (1h TTL)
-    Express-->>Candidate: 200 OK (Transcript, Scores, Next Question, Audio URL)
-    Candidate->>Candidate: Plays neural audio question & renders evaluation
+```text
+Browser MediaRecorder (Candidate speaks)
+        ↓
+Candidate clicks "Send Voice Answer" (Explicit submission)
+        ↓
+Node.js Express backend (Multer memory buffer, 10MB limit)
+        ↓
+Amazon S3 (Upload raw audio to private bucket /voice-answers)
+        ↓
+Amazon Transcribe (StartTranscriptionJobCommand)
+        ↓
+Polling loop (Checks GetTranscriptionJobCommand until COMPLETED)
+        ↓
+Transcript extracted + DeleteTranscriptionJobCommand (Immediate cleanup)
+        ↓
+Unified Interview Engine (Passed as answer text)
+        ↓
+Amazon Bedrock Router (Answer evaluated + Next question generated)
+        ↓
+Amazon Polly (SynthesizeSpeechCommand with Joanna Neural)
+        ↓
+S3 Presigned URL generated (with direct Base64 fallback if S3 upload fails)
+        ↓
+Browser receives evaluation, transcript, next question, and audio playback URL
 ```
+
+### Key Voice Safeguards:
+1. **Explicit Submission**: Audio recording is controlled directly by the candidate. The recording stops, can be reviewed in-browser, and is submitted explicitly—preventing premature submissions.
+2. **Unified Logic**: Both Text and Voice share the identical interview state machine. Candidates can freely toggle modes mid-interview via `PATCH /api/interviews/:id/mode`.
+3. **MIME Sanitization**: Sanitizes browser-specific MIME strings (e.g. `audio/webm;codecs=opus`) into formats supported by Amazon Transcribe (`webm`, `mp4`, `wav`).
+4. **Cloud Resource Hygiene**: Finished or failed Transcribe jobs are immediately deleted to avoid reaching AWS concurrent job limits.
 
 ---
 
-## 💡 Key Product Differentiators
+## 7. Adaptive Interview Flow & Follow-Up Probing
 
-| Capability | Generic Chatbot Practice | InterviewCoach AI |
-|---|---|---|
-| **Interviewer Authority** | User directs the conversation by typing prompts. | AI acts as the interviewer: drives pacing, controls progression, and maintains professional authority. |
-| **Context Grounding** | Limited to whatever the user pastes into chat. | Deep ingestion: Resume PDF/DOCX (`pdf-parse`) + Target JD analysis + Experience Level + Demeanor. |
-| **Follow-Up Intelligence** | Reads static question list or answers itself. | Evaluates answer completeness; if superficial, automatically triggers a dynamic follow-up probe. |
-| **Adaptive Difficulty** | Fixed static difficulty. | Modulates challenge dynamically based on running candidate scores (`foundational`, `balanced`, `advanced`). |
-| **Voice Interaction** | Text-only or robotic browser voices. | Full AWS voice pipeline: S3 + Amazon Transcribe + Amazon Polly Joanna Neural TTS. |
-| **API Token Efficiency** | 2-3 LLM calls per answer (evaluate, score, next Q). | **Single-turn prompt**: Evaluation + Scoring + Follow-up + Next Question in 1 Bedrock call (>55% token savings). |
-| **Post-Session Output** | Raw chat history transcript. | **Comprehensive Diagnostic Report** with 0–10 score breakdowns and a **7-Day Personalized Study Curriculum**. |
-| **Uptime Guarantee** | Single API key (fails on quota limits). | **AWS Bedrock 3-Model Fallback Router** with zero-downtime failover. |
+Instead of sequentially stepping through a rigid list ($Q1 \rightarrow Q2 \rightarrow Q3$), InterviewCoach AI implements an **adaptive state machine**:
+
+```text
+Candidate Answer
+       │
+       ▼
+AI Multi-Metric Evaluation
+       │
+       ├────────────────────────────────────────┐
+       ▼                                        ▼
+Answer is Vague / Incomplete             Answer is Thorough & Solid
+       │                                        │
+       ▼                                        ▼
+Trigger Dynamic Follow-Up Probe          Calculate Running Average Score
+(Probes trade-offs, edge cases,                 │
+ or missing implementation details)             ▼
+                                         Adjust Adaptive Difficulty Target
+                                         ├─ < 65:   FOUNDATIONAL (Reinforce basics)
+                                         ├─ 65-80:  BALANCED (Practical application)
+                                         └─ > 80:   ADVANCED (Edge cases & scale)
+                                                │
+                                                ▼
+                                         Generate Next Topic Question
+```
+
+### Concrete Code Implementation:
+In `Backend/src/services/interview/interviewEngine.js`, difficulty is dynamically derived from previous answers:
+- **`foundational`** (Average score < 65): Targets core conceptual fundamentals and definitions to help the candidate rebuild baseline confidence.
+- **`balanced`** (Average score 65–80): Targets practical real-world implementation, standard patterns, and workflow reasoning.
+- **`advanced`** (Average score > 80): Targets distributed scalability, race conditions, complex failure modes, and architectural trade-offs.
 
 ---
 
-## 🧪 Automated Testing & Hackathon Verification (91/91 Passing)
+## 8. Resume & Job Description Context Grounding
 
-InterviewCoach AI is thoroughly verified across three decoupled test suites with **91 automated assertions (100% passing)**:
+InterviewCoach AI bridges the gap between generic textbook questions and company-specific interviews by ingesting two contextual documents:
 
-```bash
-# Execute the complete automated test harness
-cd Backend
-npm run test:all
+1. **Candidate Resume**: Ingested via PDF (`pdf-parse`) or DOCX (`mammoth`) and parsed in-memory for skills, projects, and technologies.
+2. **Target Job Description**: Analyzed by Amazon Bedrock to extract structured `requiredSkills`, `preferredSkills`, `technologies`, and `responsibilities`.
+
+### Concrete Example:
+
+- **Candidate Resume**: Lists *React, Node.js, Express, MongoDB, and JWT authentication*.
+- **Target Job Description**: Demands *REST API security, microservices, and backend performance*.
+
+```text
+❌ Generic Interviewer:
+"Tell me about yourself and your experience with web development."
+
+✅ InterviewCoach AI (Grounded):
+"In your projects, you implemented JWT authentication with Node.js and MongoDB. 
+Why did you choose stateless JWTs over server-side session stores, and what security 
+measures did you take to prevent token theft or handle token revocation?"
 ```
 
-```
-======================================================================
-1. BEDROCK 3-MODEL FALLBACK SUITE (tests/model_fallback_test.js)
-======================================================================
-Test A: Claude 3 Haiku succeeds on first try (1 Bedrock call)      -> PASS
-Test B: Claude throttled -> Nova Lite succeeds                     -> PASS
-Test C: Claude daily quota exceeded -> Nova Lite succeeds          -> PASS
-Test D: Claude unavailable (HTTP 503) -> Nova Lite succeeds        -> PASS
-Test E: Claude fails + Nova succeeds -> 0 Gemma calls made         -> PASS
-Test F: Claude + Nova throttled -> Gemma 3 27B succeeds            -> PASS
-Test G: All three throttled -> Clean user-facing error emitted     -> PASS
-Test H: Invalid AWS credentials -> Fails fast (only 1 model)       -> PASS
-Test I: Invalid model ID -> Fails fast without fallback cycling    -> PASS
-Test J: Malformed model output handling (fenced JSON, preambles)   -> PASS
-Test K: Error classification accuracy (10 conditions)              -> PASS
-Test L: Structured JSON parsing preserves complete evaluation      -> PASS
-Test M: Model-specific adapter payloads (Claude / Nova / Gemma)    -> PASS
-Test N: Final report schema verification                           -> PASS
-Test O: Token usage and latency tracking                           -> PASS
-TOTAL: 45 PASSED, 0 FAILED (100%)
-
-======================================================================
-2. REAL END-TO-END INTERVIEW LIFECYCLE (tests/e2e_interview_flow_test.js)
-======================================================================
-1. User Authentication (JWT Registration & Login)                  -> PASS
-2. Starting New Interview (POST /api/interviews)                   -> PASS
-3. Frontend ID Extraction & Navigation URL (/interview/room/:id)   -> PASS
-4. Interview Room Fetch (GET /api/interviews/:id)                  -> PASS
-5. Candidate Submitting Answer to Q1 (Real Bedrock Evaluation)     -> PASS
-6. Candidate Submitting Answer to Q2 (Dynamic Follow-Up)           -> PASS
-7. Fetching Final Diagnostic Report (7-Day Plan & Models Tracked)  -> PASS
-TOTAL: 25 PASSED, 0 FAILED (100%)
-
-======================================================================
-3. AUTOMATED PRE-DEPLOYMENT QA AUDIT (qa_audit_test.js)
-======================================================================
-Health check, X-Powered-By disabled, Registration, Login,
-Protected routes, S3 file upload, Polly speech synthesis,
-Mongoose CastError 404, IDOR tenant isolation, Input validation     -> ALL 21 PASS
-TOTAL: 21 PASSED, 0 FAILED (100%)
-
-======================================================================
-GRAND TOTAL: 91 / 91 ASSERTIONS PASSED (100%)
-FRONTEND PRODUCTION BUILD: vite v8.3.0 built in 1.19s (0 errors)
-======================================================================
-```
+This ensures candidates are challenged on their **actual past implementations** and how they relate to the **hiring company's real-world needs**.
 
 ---
 
-## 💻 Tech Stack & Engineering Architecture
+## 9. Multi-Metric Answer Evaluation
 
-```
-interviewCoach/
-├── README.md                      # Primary Hackathon & Architecture Documentation
-├── frontend/                      # React 19 Client (Vite + Tailwind CSS)
-│   ├── src/
-│   │   ├── components/            # VoiceRecorder, QuestionCard, AudioPlayer, ProgressChart, Badge
-│   │   ├── context/               # AuthContext (JWT State & Session Persistence)
-│   │   ├── pages/                 # LandingPage, SetupPage, InterviewRoom, ReportPage, Dashboard
-│   │   └── services/              # Axios Client & API Contracts
-│   └── tailwind.config.js         # Dark-first design tokens (#070b14, #0c1222, #11182c)
-└── Backend/                       # Node.js + Express API Server
-    ├── server.js                  # Express Entrypoint & Graceful Startup
-    ├── qa_audit_test.js           # 21-Assertion Security & AWS Audit
-    ├── tests/
-    │   ├── model_fallback_test.js # 45-Assertion Bedrock Fallback Suite
-    │   └── e2e_interview_flow_test.js # 25-Assertion Live End-to-End Test
-    └── src/
-        ├── config/                # awsConfig.js (SDK v3 Clients) & db.js (DNS Resilient Mongo)
-        ├── controllers/           # auth, resume, and interview controllers
-        ├── middleware/            # JWT Auth, Multer (10MB Buffer), RateLimiter, ErrorHandler
-        ├── models/                # User, Interview, and QuestionAnswer Mongoose Models
-        └── services/
-            ├── ai/                # bedrockService.js & modelAdapters.js (Claude, Nova, Gemma)
-            ├── aws/               # s3Service.js, transcribeService.js, pollyService.js
-            ├── resume/            # resumeParser.js (pdf-parse / mammoth)
-            └── interview/         # interviewEngine.js (Unified Orchestrator)
-```
+Every submitted answer is evaluated by Amazon Bedrock across structured dimensions rather than receiving an uninformative single grade.
+
+### Implemented Evaluation Dimensions:
+- **Technical Accuracy** (0–10): Factual correctness and precision of technical assertions.
+- **Relevance** (0–10): How directly the answer addresses the specific question asked.
+- **Depth** (0–10): Depth of explanation, consideration of trade-offs, and underlying mechanics.
+- **Clarity** (0–10): Structure, conciseness, and logical flow of the response.
+- **Completeness** (0–10): Coverage of edge cases, security implications, and error handling.
+- **Communication** (0–10): Professional articulation and pacing.
+
+### Category Scoring Aggregations (0–100):
+- `technical`
+- `communication`
+- `problemSolving`
+- `projectKnowledge`
+- `behavioral`
+
+### Actionable Feedback Elements:
+- **Strengths**: Specific concepts and explanations the candidate articulated well.
+- **Missing Points**: Critical edge cases, architectural trade-offs, or omissions.
+- **Better Answer**: A concise, exemplary model answer demonstrating what a top-tier candidate response looks like.
 
 ---
 
-## 📡 Complete REST API Reference
+## 10. Post-Interview Diagnostic Report & 7-Day Plan
 
-### 🔐 Authentication (`/api/auth`)
-- `POST /api/auth/register` — Register a candidate account (`name`, `email`, `password`). Returns JWT token.
-- `POST /api/auth/login` — Authenticate existing candidate. Returns JWT bearer token.
-- `GET /api/auth/me` — Fetch current authenticated profile (`Bearer <token>`).
+Upon concluding the interview (or completing the target question sequence), the engine synthesizes an exhaustive diagnostic report:
 
-### 📄 Resume Management (`/api/resume`)
-- `POST /api/resume/upload` — Upload candidate resume (PDF/DOCX, max 10MB). In-memory text extraction, skill identification, and private S3 storage.
-
-### 🎯 Interviews (`/api/interviews`)
-- `POST /api/interviews` — Create a new interview session. Ingests role, experience, demeanor, resume, and JD. Generates initial Question 1.
-- `GET /api/interviews` — List candidate's past interview sessions with pagination.
-- `GET /api/interviews/dashboard/stats` — Compute longitudinal analytics (average score, total sessions, score trends, skill radar).
-- `GET /api/interviews/:id` — Retrieve session state, history, and active question.
-- `POST /api/interviews/:id/answer` — Submit written text answer. Evaluates response and advances to dynamic follow-up or next topic.
-- `POST /api/interviews/:id/voice-answer` — Submit voice recording. Transcribes via AWS Transcribe, evaluates in Bedrock, and synthesizes Polly neural speech.
-- `PATCH /api/interviews/:id/mode` — Switch between `text` and `voice` mode mid-interview without session data loss.
-- `POST /api/interviews/:id/complete` — Conclude interview session and synthesize final diagnostic report.
-- `GET /api/interviews/:id/report` — Retrieve post-interview diagnostic evaluation and 7-day study curriculum.
-
-### 🩺 System (`/api/health`)
-- `GET /api/health` — Returns system uptime, timestamp, and API health status.
+1. **Overall Performance**: Aggregate readiness score (0–100) and category-level breakdown.
+2. **Identified Weak Areas**: Pinpoints specific knowledge gaps with structured analysis:
+   - **`topic`**: The precise subject area (e.g., *Distributed Caching Trade-offs*).
+   - **`whatWasMissing`**: What the candidate omitted or explained incorrectly.
+   - **`whyItMatters`**: Why hiring managers look for this competency in real interviews.
+   - **`whatToPractice`**: Specific concepts, documentation, or exercises to review.
+3. **Question-by-Question Review**: Full transcript of questions, candidate answers, scores, itemized feedback, and model answers.
+4. **Personalized 7-Day Improvement Plan**: Converts detected weaknesses into a structured daily schedule:
+   - **Day 1**: Targeted focus on the primary technical gap identified during the session.
+   - **Day 2**: Deep-dive into conceptual fundamentals and system trade-offs.
+   - **Days 3–4**: Hands-on code practice, architectural exercises, or edge-case exploration.
+   - **Days 5–6**: Communication practice, mock articulation, and behavioral framing (STAR method).
+   - **Day 7**: Re-assessment, review, and targeted mock interview practice.
 
 ---
 
-## 🚀 Quickstart Guide (Run in 3 Minutes)
+## 11. Technology Stack
+
+### Frontend Client
+- **Framework**: React 19 (`^19.2.8`) + Vite (`^8.3.0`)
+- **Styling**: Tailwind CSS (`^3.4.19`) with custom dark-first theme tokens (`#070b14`, `#0c1222`, `#11182c`)
+- **Icons**: Lucide React (`^1.47.0`)
+- **Routing**: React Router DOM (`^7.18.4`)
+- **HTTP Client**: Axios (`^1.20.0`)
+
+### Backend Server
+- **Runtime**: Node.js (ES Modules, `>= 18.0.0`)
+- **Web Framework**: Express.js (`^4.21.2`)
+- **Database**: MongoDB Atlas with Mongoose ODM (`^8.12.1`)
+- **Security**: JWT (`jsonwebtoken` `^9.0.2`), `bcryptjs` (`^2.4.3`), CORS, disabled `x-powered-by`
+- **File Uploads**: Multer memory storage (`^1.4.5-lts.1`) with 10MB limit
+- **Document Parsers**: `pdf-parse` (`^1.1.1`) and `mammoth` (`^1.9.0`)
+
+### AWS Cloud Integration
+- **SDK**: AWS SDK for JavaScript v3 (`@aws-sdk/*` `^3.758.0`)
+- **Amazon Bedrock Runtime**: Foundation models Claude 3 Haiku, Nova Lite, Gemma 3 27B
+- **Amazon S3 & S3 Request Presigner**: Private bucket object storage and SigV4 temporary URLs
+- **Amazon Transcribe**: Asynchronous speech-to-text with automated job cleanup
+- **Amazon Polly**: Neural speech synthesis (`Joanna` engine)
+
+---
+
+## 12. Local Setup & Quickstart
 
 ### Prerequisites
 - **Node.js**: v18.0.0 or higher
-- **MongoDB**: Local MongoDB OR MongoDB Atlas connection string
-- **AWS Account**: IAM credentials with permissions for Bedrock, S3, Transcribe, and Polly in `ap-south-1`
+- **MongoDB**: Local instance (`mongodb://127.0.0.1:27017/interviewcoach`) or MongoDB Atlas URI
+- **AWS IAM Credentials**: Configured with permissions for Bedrock, S3, Transcribe, and Polly in `ap-south-1`
 
-### 1. Clone & Configure Backend
+### 1. Clone Repository
 ```bash
 git clone https://github.com/Sanesh764/interviewCoach.git
-cd interviewCoach/Backend
+cd interviewCoach
+```
+
+### 2. Configure Backend
+```bash
+cd Backend
 npm install
 ```
 
@@ -352,11 +347,11 @@ CLIENT_URL=http://localhost:5173
 # Database Connection
 MONGODB_URI=mongodb://127.0.0.1:27017/interviewcoach
 
-# JWT Security
-JWT_SECRET=your_super_secret_jwt_key_min_32_characters
+# Authentication
+JWT_SECRET=your_secure_jwt_secret_min_32_characters
 JWT_EXPIRES_IN=7d
 
-# AWS Cloud Configuration (ap-south-1 Mumbai)
+# AWS Cloud Configuration (ap-south-1)
 AWS_REGION=ap-south-1
 AWS_ACCESS_KEY_ID=your_aws_access_key_id
 AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
@@ -375,7 +370,7 @@ POLLY_VOICE_ID=Joanna
 POLLY_ENGINE=neural
 ```
 
-### 2. Configure Frontend
+### 3. Configure Frontend
 ```bash
 cd ../frontend
 npm install
@@ -386,49 +381,46 @@ Create `frontend/.env`:
 VITE_API_URL=http://localhost:5000/api
 ```
 
-### 3. Verify System with Test Suite
+### 4. Run Automated Test Verification
+The backend includes automated suites verifying Bedrock fallback routing, end-to-end interview flow, and API security:
+
 ```bash
 cd ../Backend
-npm run test:all
-```
-*(All 91 assertions will run and pass).*
 
-### 4. Launch Application
-In two separate terminal tabs:
+# Run the complete test suite:
+npm run test:all
+
+# Or run suites individually:
+npm run test:fallback   # Bedrock 3-model fallback router assertions
+npm run test:e2e        # Real live interview flow assertions
+npm test                # Security and AWS integration QA audit
+```
+
+### 5. Launch Development Servers
 ```bash
-# Tab 1: Start Backend API (Port 5000)
+# Terminal 1: Backend Server (Port 5000)
 cd Backend
 npm run dev
 
-# Tab 2: Start Frontend Client (Port 5173)
+# Terminal 2: Frontend Client (Port 5173)
 cd frontend
 npm run dev
 ```
 
-Navigate to `http://localhost:5173` in your browser.
+Visit `http://localhost:5173` to access the application.
 
 ---
 
-## 🔒 Security & Data Protection Standards
+## 13. Security & Engineering Standards
 
-- **Zero Client Credential Exposure**: All AWS access keys, secret keys, and S3 bucket identifiers are stored server-side in `Backend/.env` and are never exposed to the client bundle.
-- **Strict Tenant & IDOR Isolation**: All interview access checks enforce document ownership: `Interview.findOne({ _id: id, user: req.user._id })`.
-- **Private S3 & Short-Lived Presigned URLs**: No S3 buckets are public. Audio files and resumes are accessed via temporary AWS SigV4 signed URLs that expire after 1 hour.
-- **Transcribe Lifecycle Deletion**: Every transcription job is deleted via `DeleteTranscriptionJobCommand` upon completion to prevent cloud clutter and protect candidate audio privacy.
-- **Salted Password Hashing**: Passwords are cryptographically salted using `bcryptjs` (salt factor 10) with `select: false` on Mongoose schema queries.
-
----
-
-## 👤 Author & Hackathon Team
-
-**Built by Sanesh Kumar**
-
-- **GitHub**: [@Sanesh764](https://github.com/Sanesh764)
-- **LinkedIn**: [Sanesh Kumar](https://www.linkedin.com/in/sanesh7644/)
-- **Project Repository**: [https://github.com/Sanesh764/interviewCoach](https://github.com/Sanesh764/interviewCoach)
+- **Zero Client Credential Exposure**: AWS credentials, S3 bucket names, and IAM secrets exist strictly on the backend and are never sent to or bundled with the client.
+- **Strict IDOR Ownership Isolation**: All interview operations verify document ownership: `Interview.findOne({ _id: req.params.id, user: req.user._id })`. Users cannot access another candidate's sessions or reports.
+- **Private S3 & Presigned Access**: Uploaded resumes and audio recordings are stored in a private S3 bucket. Access is mediated through backend verification or temporary 1-hour presigned URLs.
+- **Automated Resource Deletion**: Finished or timed-out Amazon Transcribe jobs are deleted via `DeleteTranscriptionJobCommand` to eliminate lingering cloud resources.
+- **Cryptographic Password Hashing**: Passwords hashed with `bcryptjs` (salt factor 10). Mongoose schema sets `select: false` on password fields to prevent accidental query exposure.
 
 ---
 
-## 📄 License
+## 14. License
 
 This project is open-source and licensed under the [MIT License](LICENSE).
