@@ -6,10 +6,12 @@ import {
   Mic,
   Send,
   AlertCircle,
-  Flag
+  Flag,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
+import { Badge } from '../components/common/Badge';
 import { QuestionCard } from '../components/interview/QuestionCard';
 import { VoiceRecorder } from '../components/interview/VoiceRecorder';
 import { LoadingIndicator } from '../components/interview/LoadingIndicator';
@@ -119,7 +121,7 @@ export const InterviewRoomPage = () => {
       console.error('[Voice Submit Error]', err);
       setError(
         err.response?.data?.message ||
-          'Failed to process voice answer. Check AWS Transcribe and Bedrock configuration.'
+          'Failed to process voice answer. Please try speaking again.'
       );
       setProcessingStatus(null);
     }
@@ -152,23 +154,23 @@ export const InterviewRoomPage = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       {/* Top Session Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 backdrop-blur-md">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-surface-900/90 border border-slate-800 rounded-2xl p-4 backdrop-blur-xl shadow-xl">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xs">
+          <div className="w-8 h-8 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xs font-mono">
             {interview?.currentQuestionIndex || 1}
           </div>
           <div>
-            <span className="text-xs text-slate-400 block font-medium">Active Interview</span>
+            <span className="text-[11px] text-slate-400 block font-medium">Session in Progress</span>
             <span className="text-sm font-bold text-white">{interview?.role}</span>
           </div>
         </div>
 
         {/* Mode Switcher Toggle */}
-        <div className="flex items-center space-x-2 bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+        <div className="flex items-center space-x-1.5 bg-surface-950 p-1 rounded-xl border border-slate-800">
           <button
             type="button"
             onClick={() => handleModeSwitch('text')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               mode === 'text'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'
@@ -180,7 +182,7 @@ export const InterviewRoomPage = () => {
           <button
             type="button"
             onClick={() => handleModeSwitch('voice')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               mode === 'voice'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'
@@ -196,7 +198,7 @@ export const InterviewRoomPage = () => {
           type="button"
           onClick={handleFinishEarly}
           disabled={!!processingStatus}
-          className="text-xs text-slate-400 hover:text-rose-400 flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+          className="text-xs text-slate-400 hover:text-rose-400 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-surface-850 transition-colors cursor-pointer"
         >
           <Flag className="w-3.5 h-3.5" />
           Conclude Interview
@@ -205,10 +207,10 @@ export const InterviewRoomPage = () => {
 
       {/* Error Message if any */}
       {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3">
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3 shadow-lg">
           <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
           <div>
-            <h5 className="text-sm font-semibold text-rose-300">Action Required</h5>
+            <h5 className="text-sm font-semibold text-rose-300">Notice</h5>
             <p className="text-xs text-rose-300/90 mt-0.5 leading-relaxed">{error}</p>
           </div>
         </div>
@@ -229,7 +231,7 @@ export const InterviewRoomPage = () => {
 
       {/* Display last voice transcript if available */}
       {lastVoiceTranscript && (
-        <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-700/80">
+        <div className="p-4 rounded-2xl bg-surface-900/90 border border-slate-800">
           <div className="flex items-center gap-2 text-xs font-semibold text-indigo-400 mb-1">
             <Mic className="w-3.5 h-3.5" />
             Transcribed Voice Answer:
@@ -245,7 +247,7 @@ export const InterviewRoomPage = () => {
         <LoadingIndicator status={processingStatus} />
       ) : (
         /* Candidate Input Area */
-        <div className="pt-2">
+        <div className="pt-1">
           {mode === 'text' ? (
             <Card className="space-y-4">
               <div className="flex items-center justify-between">
@@ -262,12 +264,12 @@ export const InterviewRoomPage = () => {
                 rows={6}
                 value={textAnswer}
                 onChange={(e) => setTextAnswer(e.target.value)}
-                placeholder="Type your detailed answer here... (e.g., how you solved the problem, technical reasons, metrics, or lessons learned)"
-                className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm leading-relaxed"
+                placeholder="Type your detailed answer here... (e.g., how you solved the problem, technical reasons, architectural trade-offs, metrics, or lessons learned)"
+                className="w-full p-4 bg-surface-950 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-xs sm:text-sm leading-relaxed"
               />
 
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-xs text-slate-500">
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs text-slate-500 font-mono">
                   {textAnswer.trim().split(/\s+/).filter(Boolean).length} words
                 </span>
                 <Button
@@ -292,3 +294,4 @@ export const InterviewRoomPage = () => {
     </div>
   );
 };
+

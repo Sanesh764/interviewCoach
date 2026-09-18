@@ -46,17 +46,18 @@ export const LoadingIndicator = ({ status = 'analyzing', message }) => {
   const Icon = info.icon;
 
   return (
-    <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-8 backdrop-blur-md text-center max-w-md mx-auto my-8 shadow-2xl">
+    <div className="bg-surface-900/90 border border-slate-800 rounded-3xl p-8 backdrop-blur-xl text-center max-w-md mx-auto my-8 shadow-2xl ring-1 ring-white/5">
       <div className="relative inline-flex items-center justify-center mb-4">
-        <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center">
+        <div className="w-16 h-16 rounded-2xl bg-surface-950 border border-slate-800 flex items-center justify-center shadow-inner">
           <Icon className={`w-8 h-8 ${info.color} animate-pulse`} />
         </div>
-        <div className="absolute -top-1 -right-1">
-          <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
+        <div className="absolute -top-1.5 -right-1.5 p-1 rounded-full bg-surface-900 border border-slate-800 shadow-md">
+          <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
         </div>
       </div>
-      <h3 className="text-base font-bold text-white mb-1.5">{info.title}</h3>
+      <h3 className="text-base font-bold text-white mb-1.5 tracking-tight">{info.title}</h3>
       <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">{info.desc}</p>
     </div>
   );
 };
+

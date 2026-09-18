@@ -1,10 +1,10 @@
 import { Interview } from '../../models/Interview.js';
 import { QuestionAnswer } from '../../models/QuestionAnswer.js';
-import * as bedrockService from '../ai/bedrockService.js';
+import aiProvider from '../ai/aiProvider.js';
 import { synthesizeSpeech } from '../aws/pollyService.js';
 
 export const interviewEngine = {
-  // 1. Initialize an interview session and generate Question 1 (single Bedrock call)
+  // 1. Initialize an interview session and generate Question 1 (single AI call)
   startInterview: async ({
     userId,
     role,
@@ -15,27 +15,27 @@ export const interviewEngine = {
     jobDescription = '',
     resumeData = null,
   }) => {
-    // Analyze Job Description if provided to extract structured requirements
-    let jdAnalysis = null;
-    if (jobDescription && jobDescription.trim()) {
-      try {
-        jdAnalysis = await bedrockService.analyzeJobDescription(jobDescription.trim());
-      } catch (err) {
-        console.warn('[InterviewEngine] JD analysis warning:', err.message);
-      }
-    }
+    const compactJD = jobDescription ? jobDescription.trim().substring(0, 800) : '';
 
-    // Generate Question 1 with JD and resume context
-    const generated = await bedrockService.generateInterviewQuestion({
+    // Single unified AI call: extracts structured JD requirements (if provided) AND generates Question 1
+    const generated = await aiProvider.generateInterviewQuestion({
       role,
       experienceLevel,
       personality,
       resumeData,
-      jobDescriptionAnalysis: jdAnalysis,
+      jobDescription: compactJD,
       questionNumber: 1,
       totalQuestions: totalQuestionsTarget,
       previousQAs: [],
     });
+
+    const jdAnalysis = generated.jobDescriptionAnalysis || {
+      requiredSkills: [],
+      preferredSkills: [],
+      technologies: [],
+      responsibilities: [],
+      experienceRequirements: '',
+    };
 
     // Create Interview Document
     const interview = await Interview.create({
@@ -48,8 +48,8 @@ export const interviewEngine = {
       currentQuestionIndex: 1,
       status: 'in_progress',
       resumeData: resumeData || {},
-      jobDescription,
-      jobDescriptionAnalysis: jdAnalysis || {},
+      jobDescription: compactJD,
+      jobDescriptionAnalysis: jdAnalysis,
       questions: [],
     });
 
@@ -142,7 +142,7 @@ export const interviewEngine = {
     }
 
     // 1. Single Bedrock Call: Evaluates Answer AND decides/generates Next Question
-    const combinedResult = await bedrockService.processAnswerUnified({
+    const combinedResult = await aiProvider.processAnswerUnified({
       question: currentQA.question,
       answer: finalAnswer,
       role: interview.role,
@@ -226,8 +226,8 @@ export const interviewEngine = {
     // Filter questions that have been answered
     const answeredQAs = interview.questions.filter((q) => q.answer || q.transcript);
 
-    // Call Bedrock to generate final report
-    const finalReport = await bedrockService.generateFinalReport({
+    // Call AI to generate final report
+    const finalReport = await aiProvider.generateFinalReport({
       role: interview.role,
       experienceLevel: interview.experienceLevel,
       questionAnswers: answeredQAs.length > 0 ? answeredQAs : interview.questions,

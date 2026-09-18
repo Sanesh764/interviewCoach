@@ -19,23 +19,28 @@ export const ScoreCard = ({
   const scheme = getColor(percentage);
 
   return (
-    <div className={`p-4 rounded-xl bg-slate-800/80 border ${scheme.border} flex flex-col justify-between`}>
+    <div className={`p-5 rounded-2xl bg-surface-900/80 border ${scheme.border} backdrop-blur-xl flex flex-col justify-between shadow-lg`}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">{title}</span>
-        {Icon && <Icon className={`w-4 h-4 ${scheme.text}`} />}
+        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">{title}</span>
+        {Icon && (
+          <div className={`p-1.5 rounded-lg ${scheme.bg}`}>
+            <Icon className={`w-4 h-4 ${scheme.text}`} />
+          </div>
+        )}
       </div>
-      <div className="flex items-baseline space-x-1 my-1">
-        <span className={`text-2xl font-bold ${scheme.text}`}>{score}</span>
-        <span className="text-xs text-slate-500">/{maxScore}</span>
+      <div className="flex items-baseline space-x-1.5 my-1">
+        <span className={`text-3xl font-extrabold tracking-tight ${scheme.text}`}>{score}</span>
+        <span className="text-xs text-slate-500 font-medium">/{maxScore}</span>
       </div>
       {/* Progress Bar */}
-      <div className="w-full bg-slate-700/60 rounded-full h-1.5 mt-2 overflow-hidden">
+      <div className="w-full bg-surface-950 rounded-full h-1.5 mt-3 overflow-hidden border border-slate-800/80">
         <div
-          className={`h-1.5 rounded-full transition-all duration-500 ${scheme.bar}`}
+          className={`h-1.5 rounded-full transition-all duration-700 ${scheme.bar}`}
           style={{ width: `${Math.min(percentage, 100)}%` }}
         />
       </div>
-      {subtitle && <p className="text-[11px] text-slate-400 mt-2">{subtitle}</p>}
+      {subtitle && <p className="text-[11px] text-slate-400 mt-2.5">{subtitle}</p>}
     </div>
   );
 };
+

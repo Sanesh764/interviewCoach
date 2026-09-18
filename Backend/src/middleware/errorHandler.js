@@ -7,20 +7,24 @@ export const errorHandler = (err, req, res, next) => {
   // Handle Bedrock ThrottlingException (Quota limit)
   if (err.name === 'ThrottlingException' || err.statusCode === 429) {
     statusCode = 429;
-    message = err.message;
+    message =
+      'AI interview service is temporarily unavailable because the AI provider has reached its current usage limit. Please try again later.';
   } else if (err.name === 'MulterError') {
     statusCode = 400;
-    message = err.code === 'LIMIT_FILE_SIZE' ? 'File is too large. Maximum allowed size is 10MB.' : `File upload error: ${err.message}`;
+    message =
+      err.code === 'LIMIT_FILE_SIZE'
+        ? 'File is too large. Maximum allowed size is 10MB.'
+        : `File upload error: ${err.message}`;
   } else if (
     err.name === 'CredentialsProviderError' ||
+    err.name === 'ServiceUnavailable' ||
     err.message?.includes('credentials') ||
     err.message?.includes('Bedrock') ||
     err.name === 'AccessDeniedException'
   ) {
     statusCode = 503;
-    message = err.message.startsWith('AI service is not configured')
-      ? err.message
-      : `AI service configuration error: ${err.message}. Please configure AWS Bedrock credentials and model access in Backend/.env.`;
+    message =
+      'AI interview service is temporarily unavailable. Please try again later.';
   }
 
   // Handle Mongoose CastError (invalid ObjectId)

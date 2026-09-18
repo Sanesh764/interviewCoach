@@ -4,8 +4,13 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+      },
       colors: {
         brand: {
           50: '#eef2ff',
@@ -20,8 +25,20 @@ export default {
           900: '#312e81',
           950: '#1e1b4b',
         },
+        surface: {
+          950: '#070b14',
+          900: '#0c1222',
+          850: '#11182c',
+          800: '#162038',
+          750: '#1d2a4a',
+          700: '#26355d',
+        },
+      },
+      animation: {
+        'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
     },
   },
   plugins: [],
 }
+

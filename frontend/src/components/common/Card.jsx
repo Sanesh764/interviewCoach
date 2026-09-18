@@ -10,8 +10,8 @@ export const Card = ({
   return (
     <div
       onClick={onClick}
-      className={`bg-slate-800/70 border border-slate-700/80 rounded-2xl p-6 backdrop-blur-sm shadow-xl ${
-        hover ? 'hover:border-slate-600 hover:bg-slate-800 transition-all duration-200 cursor-pointer' : ''
+      className={`bg-surface-900/80 border border-slate-800/90 rounded-2xl p-6 backdrop-blur-xl shadow-xl transition-all duration-200 ${
+        hover ? 'hover:border-slate-700 hover:bg-surface-850/90 hover:shadow-2xl cursor-pointer' : ''
       } ${className}`}
       {...props}
     >
@@ -19,3 +19,4 @@ export const Card = ({
     </div>
   );
 };
+

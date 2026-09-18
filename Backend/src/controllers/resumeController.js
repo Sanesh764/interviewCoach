@@ -1,5 +1,5 @@
 import { parseResumeFile } from '../services/resume/resumeParser.js';
-import { analyzeResume } from '../services/ai/bedrockService.js';
+import aiProvider from '../services/ai/aiProvider.js';
 import { uploadToS3 } from '../services/aws/s3Service.js';
 import { isAwsConfigured } from '../config/awsConfig.js';
 
@@ -42,8 +42,8 @@ export const handleResumeUpload = async (req, res, next) => {
       }
     }
 
-    // 3. Analyze resume with Amazon Bedrock
-    const structuredData = await analyzeResume(rawText);
+    // 3. Analyze resume via AI Provider
+    const structuredData = await aiProvider.analyzeResume(rawText);
 
     res.status(200).json({
       success: true,

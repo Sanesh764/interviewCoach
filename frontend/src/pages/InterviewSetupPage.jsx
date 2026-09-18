@@ -17,10 +17,12 @@ import {
   HelpCircle,
   ArrowRight,
   Loader2,
-  X
+  X,
+  Volume2
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
+import { Badge } from '../components/common/Badge';
 
 const PRESET_ROLES = [
   'Software Engineer',
@@ -143,7 +145,7 @@ export const InterviewSetupPage = () => {
       console.error('[Start Interview Error]', err);
       setError(
         err.response?.data?.message ||
-          'Failed to initialize interview session. Please check your connection or AWS configuration.'
+          'AI interview service is temporarily unavailable. Please try again later.'
       );
       setIsSubmitting(false);
     }
@@ -151,45 +153,24 @@ export const InterviewSetupPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
+      {/* Header */}
       <div className="text-center mb-10">
-        <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-2">
-          <Sparkles className="w-3.5 h-3.5" /> Setup Wizard
+        <div className="inline-flex items-center gap-2 mb-3">
+          <Badge variant="indigo" size="sm" dot>Setup Wizard</Badge>
         </div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Configure Your Interview</h1>
-        <p className="text-sm text-slate-400 mt-2">
-          Personalize the interviewer's role, experience context, questions, and communication style.
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Configure Your Interview</h1>
+        <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-lg mx-auto leading-relaxed">
+          Select target role, candidate level, communication mode, and optional resume context for customized questioning.
         </p>
       </div>
 
       {error && (
-        <div className="mb-8 p-5 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-3">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-            <div>
-              <h5 className="text-sm font-semibold text-rose-300">
-                {error.includes('quota') || error.includes('tokens')
-                  ? 'Amazon Bedrock Quota Limit Reached'
-                  : 'AWS Configuration Notice'}
-              </h5>
-              <p className="text-xs text-rose-300/90 mt-1 leading-relaxed">{error}</p>
-            </div>
+        <div className="mb-8 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3 shadow-lg">
+          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+          <div>
+            <h5 className="text-sm font-semibold text-rose-300">Notice</h5>
+            <p className="text-xs text-rose-300/90 mt-1 leading-relaxed">{error}</p>
           </div>
-          {error.includes('AWS') && (
-            <div className="mt-3 p-3.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs text-slate-300 font-mono space-y-2">
-              <div className="text-indigo-400 font-bold font-sans">How to fix this:</div>
-              <p className="text-slate-400 font-sans">
-                Open <code className="text-white bg-slate-800 px-1.5 py-0.5 rounded">Backend/.env</code> in your editor and add your AWS credentials:
-              </p>
-              <pre className="text-indigo-300 overflow-x-auto p-2 bg-slate-950 rounded border border-slate-800">
-{`AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your_actual_aws_access_key_id
-AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
-              </pre>
-              <p className="text-[11px] text-slate-400 font-sans">
-                Also ensure model access for Claude 3 (or configured Bedrock model) is granted in the AWS Bedrock Console.
-              </p>
-            </div>
-          )}
         </div>
       )}
 
@@ -201,7 +182,7 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
               <Briefcase className="w-4 h-4 text-indigo-400" />
               1. Target Job Role <span className="text-rose-400">*</span>
             </label>
-            <span className="text-xs text-slate-400">Required</span>
+            <span className="text-[11px] text-slate-400 font-medium">Required</span>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -212,8 +193,8 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
                 onClick={() => handleRoleSelect(r)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
                   !isCustomRole && role === r
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                    : 'bg-slate-900/80 text-slate-300 hover:bg-slate-900 border border-slate-700/80 hover:border-slate-600'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400/50'
+                    : 'bg-surface-950 text-slate-300 hover:bg-surface-850 border border-slate-800 hover:border-slate-700'
                 }`}
               >
                 {r}
@@ -224,8 +205,8 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
               onClick={() => handleRoleSelect('custom')}
               className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
                 isCustomRole
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-slate-900/80 text-slate-300 hover:bg-slate-900 border border-slate-700/80 hover:border-slate-600'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400/50'
+                  : 'bg-surface-950 text-slate-300 hover:bg-surface-850 border border-slate-800 hover:border-slate-700'
               }`}
             >
               + Other Role
@@ -239,7 +220,7 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
                 value={customRole}
                 onChange={(e) => setCustomRole(e.target.value)}
                 placeholder="Enter custom role, e.g. DevOps Engineer, Mobile Developer, Cloud Architect"
-                className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                className="w-full px-4 py-2.5 bg-surface-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-xs sm:text-sm"
                 required
               />
             </div>
@@ -253,7 +234,7 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
               <GraduationCap className="w-4 h-4 text-indigo-400" />
               2. Experience Level <span className="text-rose-400">*</span>
             </label>
-            <span className="text-xs text-slate-400">Required</span>
+            <span className="text-[11px] text-slate-400 font-medium">Required</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
@@ -264,8 +245,8 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
                 onClick={() => setExperienceLevel(lvl)}
                 className={`py-2.5 px-3 rounded-xl text-xs font-semibold transition-all text-center ${
                   experienceLevel === lvl
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                    : 'bg-slate-900/80 text-slate-300 hover:bg-slate-900 border border-slate-700/80 hover:border-slate-600'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400/50'
+                    : 'bg-surface-950 text-slate-300 hover:bg-surface-850 border border-slate-800 hover:border-slate-700'
                 }`}
               >
                 {lvl}
@@ -288,8 +269,8 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
                 onClick={() => setMode('text')}
                 className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all ${
                   mode === 'text'
-                    ? 'border-indigo-500 bg-indigo-500/10'
-                    : 'border-slate-700/80 bg-slate-900/60 hover:bg-slate-900'
+                    ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/30'
+                    : 'border-slate-800 bg-surface-950 hover:bg-surface-850'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -298,7 +279,7 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
                 </div>
                 <div>
                   <h6 className="text-xs font-bold text-white">Text Mode</h6>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Type your answers thoughtfully</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Type responses thoughtfully</p>
                 </div>
               </button>
 
@@ -307,8 +288,8 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
                 onClick={() => setMode('voice')}
                 className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all ${
                   mode === 'voice'
-                    ? 'border-indigo-500 bg-indigo-500/10'
-                    : 'border-slate-700/80 bg-slate-900/60 hover:bg-slate-900'
+                    ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/30'
+                    : 'border-slate-800 bg-surface-950 hover:bg-surface-850'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -321,8 +302,8 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
                 </div>
               </button>
             </div>
-            <p className="text-[11px] text-slate-400">
-              Note: You can also switch between Text and Voice anytime during the interview.
+            <p className="text-[11px] text-slate-500">
+              Note: You can seamlessly toggle between Text and Voice during any question.
             </p>
           </Card>
 
@@ -330,13 +311,13 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
           <Card className="space-y-4">
             <label className="text-sm font-bold text-white flex items-center gap-2">
               <Smile className="w-4 h-4 text-indigo-400" />
-              4. Interview Personality
+              4. Interviewer Personality
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: 'friendly', name: 'Friendly', desc: 'Encouraging & supportive', icon: Smile },
-                { id: 'professional', name: 'Professional', desc: 'Standard formal tone', icon: Shield },
-                { id: 'strict', name: 'Strict', desc: 'Rigorous deep follow-ups', icon: Zap },
+                { id: 'friendly', name: 'Friendly', desc: 'Encouraging tone', icon: Smile },
+                { id: 'professional', name: 'Professional', desc: 'Standard formal', icon: Shield },
+                { id: 'strict', name: 'Strict', desc: 'Rigorous probes', icon: Zap },
               ].map((p) => {
                 const Icon = p.icon;
                 return (
@@ -346,8 +327,8 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
                     onClick={() => setPersonality(p.id)}
                     className={`p-3 rounded-xl border text-center transition-all ${
                       personality === p.id
-                        ? 'border-indigo-500 bg-indigo-500/10'
-                        : 'border-slate-700/80 bg-slate-900/60 hover:bg-slate-900'
+                        ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/30'
+                        : 'border-slate-800 bg-surface-950 hover:bg-surface-850'
                     }`}
                   >
                     <Icon className="w-4 h-4 text-indigo-400 mx-auto mb-1.5" />
@@ -357,8 +338,8 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
                 );
               })}
             </div>
-            <p className="text-[11px] text-slate-400">
-              Affects question tone and follow-up persistence without modifying scoring criteria.
+            <p className="text-[11px] text-slate-500">
+              Customizes conversational style and follow-up tenacity without altering scoring rubrics.
             </p>
           </Card>
         </div>
@@ -370,11 +351,11 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
               <Upload className="w-4 h-4 text-indigo-400" />
               5. Upload Resume (Optional)
             </label>
-            <span className="text-xs text-slate-400">PDF or DOCX (Max 5MB)</span>
+            <span className="text-[11px] text-slate-400">PDF or DOCX (Max 5MB)</span>
           </div>
 
           {!resumeData && !isUploadingResume && (
-            <div className="border-2 border-dashed border-slate-700 hover:border-slate-600 rounded-2xl p-6 text-center transition-colors bg-slate-900/40">
+            <div className="border-2 border-dashed border-slate-800 hover:border-slate-700 rounded-2xl p-6 text-center transition-colors bg-surface-950/60">
               <input
                 type="file"
                 id="resume-upload"
@@ -388,21 +369,21 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
                   Click to upload resume or drag and drop
                 </p>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Enables personalized questions about your actual projects and skills
+                  Enables tailored questions regarding your actual work history, projects, and tech stack
                 </p>
               </label>
             </div>
           )}
 
           {isUploadingResume && (
-            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-700 text-center flex flex-col items-center justify-center gap-2">
+            <div className="p-6 rounded-2xl bg-surface-950 border border-slate-800 text-center flex flex-col items-center justify-center gap-2">
               <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
               <p className="text-xs font-medium text-white">Extracting resume skills & projects...</p>
             </div>
           )}
 
           {resumeData && (
-            <div className="p-4 rounded-xl bg-slate-900/90 border border-emerald-500/30">
+            <div className="p-4 rounded-xl bg-surface-950 border border-emerald-500/30">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -458,14 +439,14 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
               <FileText className="w-4 h-4 text-indigo-400" />
               6. Paste Job Description (Optional)
             </label>
-            <span className="text-xs text-slate-400">Tailors questions to JD requirements</span>
+            <span className="text-[11px] text-slate-400">Tailors questions to JD requirements</span>
           </div>
           <textarea
             rows={4}
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
             placeholder="Paste target job description, responsibilities, or desired qualifications here..."
-            className="w-full p-3.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs leading-relaxed"
+            className="w-full p-3.5 bg-surface-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-xs leading-relaxed"
           />
         </Card>
 
@@ -485,8 +466,8 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
                 onClick={() => setTotalQuestionsTarget(count)}
                 className={`py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   totalQuestionsTarget === count
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                    : 'bg-slate-900/80 text-slate-300 hover:bg-slate-900 border border-slate-700/80'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400/50'
+                    : 'bg-surface-950 text-slate-300 hover:bg-surface-850 border border-slate-800'
                 }`}
               >
                 {count} Questions
@@ -496,7 +477,7 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
         </Card>
 
         {/* Submit */}
-        <div className="pt-4">
+        <div className="pt-2">
           <Button
             type="submit"
             size="xl"
@@ -512,3 +493,4 @@ AWS_SECRET_ACCESS_KEY=your_actual_aws_secret_access_key`}
     </div>
   );
 };
+

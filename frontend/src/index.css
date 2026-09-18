@@ -4,22 +4,40 @@
 
 @layer base {
   body {
-    @apply bg-slate-900 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white min-h-screen font-sans;
+    @apply bg-[#070b14] text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200 min-h-screen font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer utilities {
+  /* Subtle glass panels */
+  .glass-card {
+    @apply bg-surface-900/80 backdrop-blur-xl border border-slate-800/80 shadow-2xl;
+  }
+  .glass-panel {
+    @apply bg-slate-900/60 backdrop-blur-md border border-slate-800/60;
+  }
+  .surface-card {
+    @apply bg-surface-900 border border-slate-800 rounded-2xl;
+  }
+  .subtle-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/50;
   }
 }
 
 /* Custom subtle scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #070b14;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: #1e293b;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #334155;
 }
+

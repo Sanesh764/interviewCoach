@@ -63,9 +63,9 @@ const callBedrock = async (prompt, systemPrompt = '', maxTokens = 800, temperatu
     return outputText.trim();
   } catch (error) {
     console.error('[Amazon Bedrock Invocation Error]', error);
-    if (error.name === 'ThrottlingException') {
+    if (error.name === 'ThrottlingException' || error.statusCode === 429) {
       const err = new Error(
-        `Amazon Bedrock quota limit reached: Your AWS account has reached its daily token limit on Amazon Bedrock ("Too many tokens per day"). Please wait for the daily quota reset or increase your Bedrock service quota in AWS Console.`
+        'AI interview service is temporarily unavailable because the AI provider has reached its current usage limit. Please try again later.'
       );
       err.statusCode = 429;
       err.name = 'ThrottlingException';
@@ -77,9 +77,12 @@ const callBedrock = async (prompt, systemPrompt = '', maxTokens = 800, temperatu
       error.message?.includes('credentials') ||
       error.message?.includes('not found')
     ) {
-      throw new Error(
-        `AI service is not configured. Please configure AWS Bedrock credentials and model access in your server .env file. (Error: ${error.message})`
+      const err = new Error(
+        'AI interview service is temporarily unavailable. Please try again later.'
       );
+      err.statusCode = 503;
+      err.name = 'ServiceUnavailable';
+      throw err;
     }
     throw error;
   }
@@ -87,6 +90,9 @@ const callBedrock = async (prompt, systemPrompt = '', maxTokens = 800, temperatu
 
 // 1. Analyze Resume
 export const analyzeResume = async (rawText) => {
+  // Truncate raw text to maximum 3000 chars to avoid exhausting daily token quota on oversized PDFs
+  const compactText = (rawText || '').substring(0, 3000);
+
   const prompt = `You are an expert technical recruiter and resume analyzer.
 Analyze the following resume text and extract the key structured information.
 Return ONLY a valid JSON object in this exact schema:
@@ -99,12 +105,13 @@ Return ONLY a valid JSON object in this exact schema:
 }
 
 Resume Text:
-${rawText}
+${compactText}
 `;
 
   const responseText = await callBedrock(
     prompt,
-    'You are a precise technical resume extractor. Output valid JSON only with no conversational text.'
+    'You are a precise technical resume extractor. Output valid JSON only with no conversational text.',
+    600
   );
   return parseJsonResponse(responseText);
 };
@@ -133,12 +140,13 @@ ${jdText}
   return parseJsonResponse(responseText);
 };
 
-// 3. Generate Interview Question
+// 3. Generate Interview Question (with optional inline JD analysis in a single Bedrock call)
 export const generateInterviewQuestion = async ({
   role,
   experienceLevel,
   personality = 'professional',
   resumeData = null,
+  jobDescription = '',
   jobDescriptionAnalysis = null,
   questionNumber = 1,
   totalQuestions = 5,
@@ -150,6 +158,9 @@ export const generateInterviewQuestion = async ({
     strict: 'Adopt a rigorous, skeptical, and challenging interviewer tone, demanding precise technical depth.',
   };
 
+  const hasJD = !!(jobDescription && jobDescription.trim());
+  const compactJD = hasJD ? jobDescription.trim().substring(0, 800) : '';
+
   const prompt = `You are an expert interviewer conducting a job interview.
 Interview Context:
 - Target Role: ${role}
@@ -160,17 +171,20 @@ Interview Context:
 ${
   resumeData
     ? `- Candidate Resume Context:
-   Extracted Skills: ${resumeData.skills?.join(', ') || 'N/A'}
-   Extracted Projects: ${resumeData.projects?.join('; ') || 'N/A'}
-   Extracted Technologies: ${resumeData.technologies?.join(', ') || 'N/A'}`
+   Extracted Skills: ${resumeData.skills?.slice(0, 10).join(', ') || 'N/A'}
+   Extracted Projects: ${resumeData.projects?.slice(0, 3).join('; ') || 'N/A'}
+   Extracted Technologies: ${resumeData.technologies?.slice(0, 10).join(', ') || 'N/A'}`
     : '- No resume provided.'
 }
 
 ${
   jobDescriptionAnalysis
     ? `- Target Job Description Context:
-   Required Skills: ${jobDescriptionAnalysis.requiredSkills?.join(', ') || 'N/A'}
-   Core Technologies: ${jobDescriptionAnalysis.technologies?.join(', ') || 'N/A'}`
+   Required Skills: ${jobDescriptionAnalysis.requiredSkills?.slice(0, 8).join(', ') || 'N/A'}
+   Core Technologies: ${jobDescriptionAnalysis.technologies?.slice(0, 8).join(', ') || 'N/A'}`
+    : hasJD
+    ? `- Target Job Description Text:
+   ${compactJD}`
     : '- No specific Job Description provided.'
 }
 
@@ -191,17 +205,26 @@ Instructions:
 2. For Question 1, start with an appropriate opening question (e.g. behavioral/introductory or foundational for the role).
 3. For middle questions, ask specific technical questions or deep project questions referencing technologies from the resume or JD.
 4. Adapt the phrasing according to the selected personality (${personality}).
-5. Return ONLY a valid JSON object in this exact schema:
+${hasJD && !jobDescriptionAnalysis ? '5. Also extract the structured JD requirements into "jobDescriptionAnalysis".' : ''}
+
+Return ONLY a valid JSON object in this exact schema:
 {
   "question": "The interview question text to ask the candidate",
-  "category": "Technical" | "Project" | "Behavioral" | "General"
+  "category": "Technical" | "Project" | "Behavioral" | "General"${hasJD && !jobDescriptionAnalysis ? `,
+  "jobDescriptionAnalysis": {
+    "requiredSkills": ["Skill 1", "Skill 2"],
+    "preferredSkills": ["Skill 1"],
+    "technologies": ["Tech 1", "Tech 2"],
+    "responsibilities": ["Responsibility 1"],
+    "experienceRequirements": "Summary"
+  }` : ''}
 }
 `;
 
   const responseText = await callBedrock(
     prompt,
     'You are an expert AI interviewer. Output only valid JSON.',
-    450
+    hasJD && !jobDescriptionAnalysis ? 550 : 450
   );
   return parseJsonResponse(responseText);
 };

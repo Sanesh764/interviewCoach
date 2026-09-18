@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
+import { Badge } from '../components/common/Badge';
 import { LoadingIndicator } from '../components/interview/LoadingIndicator';
 
 export const InterviewHistoryPage = () => {
@@ -43,7 +44,7 @@ export const InterviewHistoryPage = () => {
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center">
-        <LoadingIndicator status="evaluating" message="Loading interview history..." />
+        <LoadingIndicator status="evaluating" message="Loading interview history records..." />
       </div>
     );
   }
@@ -53,12 +54,14 @@ export const InterviewHistoryPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <div className="inline-flex items-center gap-2 mb-2">
+            <Badge variant="indigo" size="sm" dot>History & Transcripts</Badge>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            <History className="w-7 h-7 text-indigo-400" />
             Interview History
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Review past interview transcripts, scores, feedback, and 7-day roadmaps
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            Review past interview transcripts, multi-metric scores, feedback, and 7-day study curricula
           </p>
         </div>
 
@@ -79,10 +82,10 @@ export const InterviewHistoryPage = () => {
           <button
             key={tab.id}
             onClick={() => setFilterMode(tab.id)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               filterMode === tab.id
-                ? 'bg-indigo-600 text-white'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white hover:bg-surface-850'
             }`}
           >
             {tab.label}
@@ -100,7 +103,7 @@ export const InterviewHistoryPage = () => {
           </p>
           <div className="mt-6">
             <Link to="/interview/setup">
-              <Button variant="primary">Start Practice Session</Button>
+              <Button variant="primary" icon={PlusCircle}>Start Practice Session</Button>
             </Link>
           </div>
         </Card>
@@ -114,24 +117,24 @@ export const InterviewHistoryPage = () => {
                   ? `/interview/report/${item._id}`
                   : `/interview/room/${item._id}`
               }
-              className="block bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-5 transition-all shadow-md group"
+              className="block bg-surface-900/90 hover:bg-surface-850 border border-slate-800/80 hover:border-slate-700 rounded-2xl p-5 transition-all shadow-md group"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h4 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
                       {item.role}
                     </h4>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-700 text-slate-300">
+                    <Badge variant="default" size="sm">
                       {item.experienceLevel}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-700 text-slate-300 capitalize">
+                    </Badge>
+                    <Badge variant="default" size="sm" className="capitalize">
                       {item.personality}
-                    </span>
+                    </Badge>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400">
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1.5">
                       {item.mode === 'voice' ? (
                         <Mic className="w-3.5 h-3.5 text-indigo-400" />
                       ) : (
@@ -140,35 +143,35 @@ export const InterviewHistoryPage = () => {
                       {item.mode === 'voice' ? 'Voice Mode' : 'Text Mode'}
                     </span>
                     <span>•</span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-slate-500" />
                       {new Date(item.completedAt || item.createdAt).toLocaleDateString()}
                     </span>
                     <span>•</span>
-                    <span>
+                    <span className="font-mono">
                       {item.questions?.length || item.currentQuestionIndex || 0} questions
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-700/60">
+                <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-800">
                   {item.status === 'completed' ? (
                     <div className="text-left sm:text-right">
                       <span className="text-[10px] uppercase font-mono text-slate-400 block">
                         Overall Score
                       </span>
-                      <span className="text-xl font-extrabold text-indigo-400">
+                      <span className="text-xl font-extrabold text-indigo-400 font-mono">
                         {item.overallScore}
                         <span className="text-xs text-slate-500 font-normal">/100</span>
                       </span>
                     </div>
                   ) : (
-                    <span className="text-xs px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <Badge variant="amber" size="sm">
                       In Progress
-                    </span>
+                    </Badge>
                   )}
 
-                  <div className="w-9 h-9 rounded-xl bg-slate-700/60 group-hover:bg-indigo-600 group-hover:text-white text-slate-400 flex items-center justify-center transition-all">
+                  <div className="w-9 h-9 rounded-xl bg-surface-950 group-hover:bg-indigo-600 group-hover:text-white text-slate-400 flex items-center justify-center transition-all border border-slate-800">
                     <ArrowUpRight className="w-4 h-4" />
                   </div>
                 </div>
@@ -180,3 +183,4 @@ export const InterviewHistoryPage = () => {
     </div>
   );
 };
+

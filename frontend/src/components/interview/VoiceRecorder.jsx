@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Play, Pause, RotateCcw, Send, AlertCircle } from 'lucide-react';
+import { Mic, Square, Play, Pause, RotateCcw, Send, AlertCircle, Radio } from 'lucide-react';
 import { Button } from '../common/Button';
+import { Badge } from '../common/Badge';
 
 export const VoiceRecorder = ({ onSendAnswer, isProcessing = false, disabled = false }) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -133,22 +134,21 @@ export const VoiceRecorder = ({ onSendAnswer, isProcessing = false, disabled = f
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-6 backdrop-blur-sm">
+    <div className="bg-surface-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl">
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
           <Mic className="w-3.5 h-3.5 text-indigo-400" />
           Voice Answer Recording
         </span>
         {isRecording && (
-          <span className="inline-flex items-center gap-1.5 text-xs text-rose-400 font-mono font-medium">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+          <Badge variant="rose" size="sm" dot>
             LIVE {formatTime(recordingDuration)}
-          </span>
+          </Badge>
         )}
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 text-xs text-rose-300">
+        <div className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 text-xs text-rose-300">
           <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
@@ -171,14 +171,14 @@ export const VoiceRecorder = ({ onSendAnswer, isProcessing = false, disabled = f
             <button
               onClick={startRecording}
               disabled={disabled || isProcessing}
-              className="w-20 h-20 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-xl shadow-indigo-600/30 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 cursor-pointer mx-auto"
+              className="w-20 h-20 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-xl shadow-indigo-600/30 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 cursor-pointer mx-auto ring-4 ring-indigo-500/20"
             >
               <Mic className="w-8 h-8" />
             </button>
             <div>
-              <p className="text-sm font-medium text-white">Click to Start Speaking</p>
-              <p className="text-xs text-slate-400 mt-1">
-                Record your answer naturally. You can review playback before sending.
+              <p className="text-sm font-semibold text-white">Click to Start Speaking</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                Record your response naturally. Media will be sent to Amazon Transcribe for speech-to-text conversion.
               </p>
             </div>
           </div>
@@ -186,32 +186,33 @@ export const VoiceRecorder = ({ onSendAnswer, isProcessing = false, disabled = f
 
         {isRecording && (
           <div className="text-center space-y-5">
-            <div className="relative">
+            <div className="relative inline-block">
+              <span className="absolute -inset-3 rounded-full bg-rose-500/20 animate-ping" />
               <button
                 onClick={stopRecording}
-                className="w-20 h-20 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-xl shadow-rose-600/40 animate-pulse hover:scale-105 transition-all cursor-pointer mx-auto"
+                className="relative w-20 h-20 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-xl shadow-rose-600/40 hover:scale-105 active:scale-95 transition-all cursor-pointer mx-auto ring-4 ring-rose-500/30"
               >
                 <Square className="w-8 h-8 fill-current" />
               </button>
             </div>
             <div>
-              <p className="text-lg font-mono font-bold text-white tracking-widest">
+              <p className="text-2xl font-mono font-bold text-white tracking-widest">
                 {formatTime(recordingDuration)}
               </p>
-              <p className="text-xs text-slate-400 mt-1">Click red button when you finish speaking</p>
+              <p className="text-xs text-slate-400 mt-1">Click the red square when you finish speaking</p>
             </div>
           </div>
         )}
 
         {!isRecording && audioUrl && (
-          <div className="w-full space-y-4">
-            <div className="flex items-center justify-between bg-slate-800/80 border border-slate-700 rounded-xl p-4">
+          <div className="w-full max-w-md space-y-4">
+            <div className="flex items-center justify-between bg-surface-950 border border-slate-800 rounded-2xl p-4">
               <div className="flex items-center space-x-3">
                 <button
                   onClick={handlePlayToggle}
-                  className="w-10 h-10 rounded-full bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center text-indigo-400 transition-colors"
+                  className="w-10 h-10 rounded-full bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center text-indigo-400 transition-colors cursor-pointer"
                 >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5 fill-current" />}
                 </button>
                 <div>
                   <p className="text-xs font-semibold text-white">Answer Recorded</p>
@@ -224,7 +225,7 @@ export const VoiceRecorder = ({ onSendAnswer, isProcessing = false, disabled = f
               <button
                 onClick={resetRecording}
                 disabled={isProcessing}
-                className="text-xs text-slate-400 hover:text-white flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-slate-700/60 transition-colors"
+                className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-surface-850 transition-colors cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Record Again
@@ -248,3 +249,4 @@ export const VoiceRecorder = ({ onSendAnswer, isProcessing = false, disabled = f
     </div>
   );
 };
+
