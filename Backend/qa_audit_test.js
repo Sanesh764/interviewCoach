@@ -7,6 +7,7 @@ const BASE_URL = 'http://localhost:5000/api';
 
 const results = [];
 
+
 function assert(testName, condition, details = '') {
   if (condition) {
     console.log(`✅ [PASS] ${testName}`);
