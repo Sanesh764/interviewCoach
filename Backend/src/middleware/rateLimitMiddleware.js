@@ -2,7 +2,7 @@
 const authAttempts = new Map();
 
 // Periodic cleanup of stale IP entries every 10 minutes to prevent memory leak
-setInterval(() => {
+const cleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [ip, data] of authAttempts.entries()) {
     if (now - data.firstAttempt > 15 * 60 * 1000) {
@@ -10,6 +10,10 @@ setInterval(() => {
     }
   }
 }, 10 * 60 * 1000);
+
+if (cleanupTimer.unref) {
+  cleanupTimer.unref();
+}
 
 export const authRateLimiter = (req, res, next) => {
   // Bypass rate limiting in development mode or during automated test suites

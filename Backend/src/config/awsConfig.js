@@ -3,59 +3,65 @@ import { S3Client } from '@aws-sdk/client-s3';
 import { TranscribeClient } from '@aws-sdk/client-transcribe';
 import { PollyClient } from '@aws-sdk/client-polly';
 
-const getAwsCredentials = () => {
+const getAwsClientConfig = () => {
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
   const sessionToken = process.env.AWS_SESSION_TOKEN;
-  const region = process.env.AWS_REGION || 'us-east-1';
+  const region = process.env.AWS_REGION || 'ap-south-1';
 
-  if (!accessKeyId || !secretAccessKey) {
-    return null;
+  const config = { region };
+
+  if (accessKeyId && secretAccessKey) {
+    config.credentials = {
+      accessKeyId,
+      secretAccessKey,
+    };
+    if (sessionToken) {
+      config.credentials.sessionToken = sessionToken;
+    }
   }
 
-  const creds = {
-    accessKeyId,
-    secretAccessKey,
-  };
-
-  if (sessionToken) {
-    creds.sessionToken = sessionToken;
-  }
-
-  return { credentials: creds, region };
+  return config;
 };
 
 export const isAwsConfigured = () => {
-  return !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
+  // 1. Explicit credentials in environment
+  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+    return true;
+  }
+  // 2. Production or AWS deployment environment where IAM instance role / AWS provider resolves credentials
+  if (
+    process.env.NODE_ENV === 'production' ||
+    process.env.AWS_EXECUTION_ENV ||
+    process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI ||
+    process.env.AWS_PROFILE ||
+    process.env.AWS_ROLE_ARN
+  ) {
+    return true;
+  }
+  return false;
 };
 
 export const verifyAwsConfiguration = (serviceName = 'AWS') => {
   if (!isAwsConfigured()) {
     throw new Error(
-      `AI service is not configured. Please configure AWS credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION) in your Backend .env file to enable ${serviceName}.`
+      `AI service is not configured. Please configure AWS credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION) in your Backend .env file or attach an IAM role to enable ${serviceName}.`
     );
   }
 };
 
-const awsAuth = getAwsCredentials();
+const baseClientConfig = getAwsClientConfig();
 
-export const bedrockClient = new BedrockRuntimeClient(
-  awsAuth
-    ? { ...awsAuth, maxAttempts: 1 }
-    : { region: process.env.AWS_REGION || 'us-east-1', maxAttempts: 1 }
-);
+export const bedrockClient = new BedrockRuntimeClient({
+  ...baseClientConfig,
+  maxAttempts: 1,
+});
 
-export const s3Client = new S3Client(
-  awsAuth ? awsAuth : { region: process.env.AWS_REGION || 'us-east-1' }
-);
+export const s3Client = new S3Client(baseClientConfig);
 
-export const transcribeClient = new TranscribeClient(
-  awsAuth ? awsAuth : { region: process.env.AWS_REGION || 'us-east-1' }
-);
+export const transcribeClient = new TranscribeClient(baseClientConfig);
 
-export const pollyClient = new PollyClient(
-  awsAuth ? awsAuth : { region: process.env.AWS_REGION || 'us-east-1' }
-);
+export const pollyClient = new PollyClient(baseClientConfig);
 
 export const AWS_CONFIG = {
   region: process.env.AWS_REGION || 'ap-south-1',

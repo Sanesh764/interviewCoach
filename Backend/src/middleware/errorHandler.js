@@ -1,7 +1,7 @@
 export const errorHandler = (err, req, res, next) => {
   console.error('[Error Handler]', err);
 
-  let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  let statusCode = err.statusCode || err.status || (res.statusCode === 200 ? 500 : res.statusCode);
   let message = err.message || 'Internal Server Error';
 
   // Handle Bedrock ThrottlingException (Quota limit)
