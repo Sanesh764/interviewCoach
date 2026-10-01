@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { interviewService } from '../services/interviewService';
 import {
-  Sparkles,
   Briefcase,
   GraduationCap,
   MessageSquare,
@@ -17,8 +16,7 @@ import {
   HelpCircle,
   ArrowRight,
   Loader2,
-  X,
-  Volume2
+  X
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
@@ -163,14 +161,14 @@ export const InterviewSetupPage = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 bg-[#181818]">
       {/* Header */}
       <div className="text-center mb-10">
         <div className="inline-flex items-center gap-2 mb-3">
-          <Badge variant="indigo" size="sm" dot>Setup Wizard</Badge>
+          <Badge variant="lime" size="sm" dot>Setup Wizard</Badge>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Configure Your Interview</h1>
-        <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-lg mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm text-[#A0A0A0] mt-2 max-w-lg mx-auto leading-relaxed">
           Select target role, candidate level, communication mode, and optional resume context for customized questioning.
         </p>
       </div>
@@ -190,10 +188,10 @@ export const InterviewSetupPage = () => {
         <Card className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="text-sm font-bold text-white flex items-center gap-2">
-              <Briefcase className="w-4 h-4 text-indigo-400" />
+              <Briefcase className="w-4 h-4 text-[#B8FF00]" />
               1. Target Job Role <span className="text-rose-400">*</span>
             </label>
-            <span className="text-[11px] text-slate-400 font-medium">Required</span>
+            <span className="text-[11px] text-[#A0A0A0] font-mono">Required</span>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -202,10 +200,10 @@ export const InterviewSetupPage = () => {
                 type="button"
                 key={r}
                 onClick={() => handleRoleSelect(r)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   !isCustomRole && role === r
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400/50'
-                    : 'bg-surface-950 text-slate-300 hover:bg-surface-850 border border-slate-800 hover:border-slate-700'
+                    ? 'bg-[#B8FF00] text-[#222222] shadow-md shadow-[#B8FF00]/15'
+                    : 'bg-[#181818] text-[#D0D0D0] hover:bg-[#2A2A2A] border border-[#383838] hover:border-[#5F5F5F]'
                 }`}
               >
                 {r}
@@ -214,10 +212,10 @@ export const InterviewSetupPage = () => {
             <button
               type="button"
               onClick={() => handleRoleSelect('custom')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 isCustomRole
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400/50'
-                  : 'bg-surface-950 text-slate-300 hover:bg-surface-850 border border-slate-800 hover:border-slate-700'
+                  ? 'bg-[#B8FF00] text-[#222222] shadow-md shadow-[#B8FF00]/15'
+                  : 'bg-[#181818] text-[#D0D0D0] hover:bg-[#2A2A2A] border border-[#383838] hover:border-[#5F5F5F]'
               }`}
             >
               + Other Role
@@ -231,7 +229,7 @@ export const InterviewSetupPage = () => {
                 value={customRole}
                 onChange={(e) => setCustomRole(e.target.value)}
                 placeholder="Enter custom role, e.g. DevOps Engineer, Mobile Developer, Cloud Architect"
-                className="w-full px-4 py-2.5 bg-surface-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-xs sm:text-sm"
+                className="w-full px-4 py-2.5 bg-[#2A2A2A] border border-[#5F5F5F] rounded-xl text-white placeholder-[#707070] focus:outline-none focus:ring-2 focus:ring-[#B8FF00]/40 focus:border-[#B8FF00] text-xs sm:text-sm"
                 required
               />
             </div>
@@ -242,10 +240,10 @@ export const InterviewSetupPage = () => {
         <Card className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="text-sm font-bold text-white flex items-center gap-2">
-              <GraduationCap className="w-4 h-4 text-indigo-400" />
+              <GraduationCap className="w-4 h-4 text-[#B8FF00]" />
               2. Experience Level <span className="text-rose-400">*</span>
             </label>
-            <span className="text-[11px] text-slate-400 font-medium">Required</span>
+            <span className="text-[11px] text-[#A0A0A0] font-mono">Required</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
@@ -254,10 +252,10 @@ export const InterviewSetupPage = () => {
                 type="button"
                 key={lvl}
                 onClick={() => setExperienceLevel(lvl)}
-                className={`py-2.5 px-3 rounded-xl text-xs font-semibold transition-all text-center ${
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
                   experienceLevel === lvl
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400/50'
-                    : 'bg-surface-950 text-slate-300 hover:bg-surface-850 border border-slate-800 hover:border-slate-700'
+                    ? 'bg-[#B8FF00] text-[#222222] shadow-md shadow-[#B8FF00]/15'
+                    : 'bg-[#181818] text-[#D0D0D0] hover:bg-[#2A2A2A] border border-[#383838] hover:border-[#5F5F5F]'
                 }`}
               >
                 {lvl}
@@ -271,49 +269,49 @@ export const InterviewSetupPage = () => {
           {/* Mode */}
           <Card className="space-y-4">
             <label className="text-sm font-bold text-white flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-indigo-400" />
+              <MessageSquare className="w-4 h-4 text-[#B8FF00]" />
               3. Interview Mode
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setMode('text')}
-                className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                   mode === 'text'
-                    ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/30'
-                    : 'border-slate-800 bg-surface-950 hover:bg-surface-850'
+                    ? 'border-[#B8FF00] bg-[#B8FF00]/10 ring-1 ring-[#B8FF00]/40'
+                    : 'border-[#333333] bg-[#181818] hover:bg-[#2A2A2A]'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <MessageSquare className="w-5 h-5 text-indigo-400" />
-                  {mode === 'text' && <CheckCircle2 className="w-4 h-4 text-indigo-400" />}
+                  <MessageSquare className={`w-5 h-5 ${mode === 'text' ? 'text-[#B8FF00]' : 'text-[#A0A0A0]'}`} />
+                  {mode === 'text' && <CheckCircle2 className="w-4 h-4 text-[#B8FF00]" />}
                 </div>
                 <div>
                   <h6 className="text-xs font-bold text-white">Text Mode</h6>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Type responses thoughtfully</p>
+                  <p className="text-[11px] text-[#A0A0A0] mt-0.5">Type responses thoughtfully</p>
                 </div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setMode('voice')}
-                className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                   mode === 'voice'
-                    ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/30'
-                    : 'border-slate-800 bg-surface-950 hover:bg-surface-850'
+                    ? 'border-[#B8FF00] bg-[#B8FF00]/10 ring-1 ring-[#B8FF00]/40'
+                    : 'border-[#333333] bg-[#181818] hover:bg-[#2A2A2A]'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <Mic className="w-5 h-5 text-rose-400" />
-                  {mode === 'voice' && <CheckCircle2 className="w-4 h-4 text-indigo-400" />}
+                  <Mic className={`w-5 h-5 ${mode === 'voice' ? 'text-[#B8FF00]' : 'text-[#A0A0A0]'}`} />
+                  {mode === 'voice' && <CheckCircle2 className="w-4 h-4 text-[#B8FF00]" />}
                 </div>
                 <div>
                   <h6 className="text-xs font-bold text-white">Voice Mode</h6>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Speak via Transcribe & Polly</p>
+                  <p className="text-[11px] text-[#A0A0A0] mt-0.5">Speak via Transcribe & Polly</p>
                 </div>
               </button>
             </div>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-[#A0A0A0]">
               Note: You can seamlessly toggle between Text and Voice during any question.
             </p>
           </Card>
@@ -321,7 +319,7 @@ export const InterviewSetupPage = () => {
           {/* Personality */}
           <Card className="space-y-4">
             <label className="text-sm font-bold text-white flex items-center gap-2">
-              <Smile className="w-4 h-4 text-indigo-400" />
+              <Smile className="w-4 h-4 text-[#B8FF00]" />
               4. Interviewer Personality
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -331,25 +329,26 @@ export const InterviewSetupPage = () => {
                 { id: 'strict', name: 'Strict', desc: 'Rigorous probes', icon: Zap },
               ].map((p) => {
                 const Icon = p.icon;
+                const isSelected = personality === p.id;
                 return (
                   <button
                     type="button"
                     key={p.id}
                     onClick={() => setPersonality(p.id)}
-                    className={`p-3 rounded-xl border text-center transition-all ${
-                      personality === p.id
-                        ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/30'
-                        : 'border-slate-800 bg-surface-950 hover:bg-surface-850'
+                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-[#B8FF00] bg-[#B8FF00]/10 ring-1 ring-[#B8FF00]/40'
+                        : 'border-[#333333] bg-[#181818] hover:bg-[#2A2A2A]'
                     }`}
                   >
-                    <Icon className="w-4 h-4 text-indigo-400 mx-auto mb-1.5" />
+                    <Icon className={`w-4 h-4 mx-auto mb-1.5 ${isSelected ? 'text-[#B8FF00]' : 'text-[#A0A0A0]'}`} />
                     <h6 className="text-xs font-bold text-white">{p.name}</h6>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{p.desc}</p>
+                    <p className="text-[10px] text-[#A0A0A0] mt-0.5">{p.desc}</p>
                   </button>
                 );
               })}
             </div>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-[#A0A0A0]">
               Customizes conversational style and follow-up tenacity without altering scoring rubrics.
             </p>
           </Card>
@@ -359,14 +358,14 @@ export const InterviewSetupPage = () => {
         <Card className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="text-sm font-bold text-white flex items-center gap-2">
-              <Upload className="w-4 h-4 text-indigo-400" />
+              <Upload className="w-4 h-4 text-[#B8FF00]" />
               5. Upload Resume (Optional)
             </label>
-            <span className="text-[11px] text-slate-400">PDF or DOCX (Max 5MB)</span>
+            <span className="text-[11px] text-[#A0A0A0] font-mono">PDF or DOCX (Max 5MB)</span>
           </div>
 
           {!resumeData && !isUploadingResume && (
-            <div className="border-2 border-dashed border-slate-800 hover:border-slate-700 rounded-2xl p-6 text-center transition-colors bg-surface-950/60">
+            <div className="border-2 border-dashed border-[#444444] hover:border-[#B8FF00] rounded-2xl p-6 text-center transition-colors bg-[#181818]">
               <input
                 type="file"
                 id="resume-upload"
@@ -375,11 +374,11 @@ export const InterviewSetupPage = () => {
                 className="hidden"
               />
               <label htmlFor="resume-upload" className="cursor-pointer">
-                <FileText className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
-                <p className="text-xs font-semibold text-white">
+                <FileText className="w-8 h-8 text-[#B8FF00] mx-auto mb-2" />
+                <p className="text-xs font-bold text-white">
                   Click to upload resume or drag and drop
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-[#A0A0A0] mt-1">
                   Enables tailored questions regarding your actual work history, projects, and tech stack
                 </p>
               </label>
@@ -387,25 +386,25 @@ export const InterviewSetupPage = () => {
           )}
 
           {isUploadingResume && (
-            <div className="p-6 rounded-2xl bg-surface-950 border border-slate-800 text-center flex flex-col items-center justify-center gap-2">
-              <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
-              <p className="text-xs font-medium text-white">Extracting resume skills & projects...</p>
+            <div className="p-6 rounded-2xl bg-[#181818] border border-[#333333] text-center flex flex-col items-center justify-center gap-2">
+              <Loader2 className="w-6 h-6 text-[#B8FF00] animate-spin" />
+              <p className="text-xs font-bold text-white">Extracting resume skills & projects...</p>
             </div>
           )}
 
           {resumeData && (
-            <div className="p-4 rounded-xl bg-surface-950 border border-emerald-500/30">
+            <div className="p-4 rounded-xl bg-[#181818] border border-[#B8FF00]/40">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-semibold text-white">
+                  <CheckCircle2 className="w-4 h-4 text-[#B8FF00]" />
+                  <span className="text-xs font-bold text-white">
                     {resumeFile?.name || 'Resume Parsed Successfully'}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={removeResume}
-                  className="text-slate-400 hover:text-rose-400 transition-colors"
+                  className="text-[#A0A0A0] hover:text-rose-400 transition-colors cursor-pointer"
                   title="Remove resume"
                 >
                   <X className="w-4 h-4" />
@@ -414,18 +413,18 @@ export const InterviewSetupPage = () => {
 
               {resumeData.skills?.length > 0 && (
                 <div className="mt-2">
-                  <span className="text-[11px] font-medium text-slate-400">Extracted Skills: </span>
+                  <span className="text-[11px] font-bold text-[#A0A0A0]">Extracted Skills: </span>
                   <div className="flex flex-wrap gap-1.5 mt-1.5">
                     {resumeData.skills.slice(0, 10).map((skill, idx) => (
                       <span
                         key={idx}
-                        className="text-[10px] px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                        className="text-[10px] px-2 py-0.5 rounded-md bg-[#2A2A2A] text-white border border-[#444444] font-medium"
                       >
                         {skill}
                       </span>
                     ))}
                     {resumeData.skills.length > 10 && (
-                      <span className="text-[10px] text-slate-500 self-center">
+                      <span className="text-[10px] text-[#A0A0A0] self-center">
                         +{resumeData.skills.length - 10} more
                       </span>
                     )}
@@ -447,17 +446,17 @@ export const InterviewSetupPage = () => {
         <Card className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-sm font-bold text-white flex items-center gap-2">
-              <FileText className="w-4 h-4 text-indigo-400" />
+              <FileText className="w-4 h-4 text-[#B8FF00]" />
               6. Paste Job Description (Optional)
             </label>
-            <span className="text-[11px] text-slate-400">Tailors questions to JD requirements</span>
+            <span className="text-[11px] text-[#A0A0A0]">Tailors questions to JD requirements</span>
           </div>
           <textarea
             rows={4}
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
             placeholder="Paste target job description, responsibilities, or desired qualifications here..."
-            className="w-full p-3.5 bg-surface-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-xs leading-relaxed"
+            className="w-full p-3.5 bg-[#2A2A2A] border border-[#5F5F5F] rounded-xl text-white placeholder-[#707070] focus:outline-none focus:ring-2 focus:ring-[#B8FF00]/40 focus:border-[#B8FF00] text-xs leading-relaxed"
           />
         </Card>
 
@@ -465,7 +464,7 @@ export const InterviewSetupPage = () => {
         <Card className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-sm font-bold text-white flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-indigo-400" />
+              <HelpCircle className="w-4 h-4 text-[#B8FF00]" />
               7. Number of Questions
             </label>
           </div>
@@ -475,10 +474,10 @@ export const InterviewSetupPage = () => {
                 type="button"
                 key={count}
                 onClick={() => setTotalQuestionsTarget(count)}
-                className={`py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   totalQuestionsTarget === count
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400/50'
-                    : 'bg-surface-950 text-slate-300 hover:bg-surface-850 border border-slate-800'
+                    ? 'bg-[#B8FF00] text-[#222222] shadow-md shadow-[#B8FF00]/15'
+                    : 'bg-[#181818] text-[#D0D0D0] hover:bg-[#2A2A2A] border border-[#383838]'
                 }`}
               >
                 {count} Questions
@@ -504,4 +503,3 @@ export const InterviewSetupPage = () => {
     </div>
   );
 };
-

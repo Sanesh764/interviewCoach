@@ -160,26 +160,26 @@ export const InterviewRoomPage = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       {/* Top Session Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-surface-900/90 border border-slate-800 rounded-2xl p-4 backdrop-blur-xl shadow-xl">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#222222] border border-[#333333] rounded-2xl p-4 backdrop-blur-xl shadow-xl">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xs font-mono">
+          <div className="w-8 h-8 rounded-xl bg-[#B8FF00]/10 text-[#B8FF00] border border-[#B8FF00]/30 flex items-center justify-center font-bold text-xs font-mono">
             {interview?.currentQuestionIndex || 1}
           </div>
           <div>
-            <span className="text-[11px] text-slate-400 block font-medium">Session in Progress</span>
+            <span className="text-[11px] text-[#A0A0A0] block font-medium">Session in Progress</span>
             <span className="text-sm font-bold text-white">{interview?.role}</span>
           </div>
         </div>
 
         {/* Mode Switcher Toggle */}
-        <div className="flex items-center space-x-1.5 bg-surface-950 p-1 rounded-xl border border-slate-800">
+        <div className="flex items-center space-x-1.5 bg-[#181818] p-1 rounded-xl border border-[#333333]">
           <button
             type="button"
             onClick={() => handleModeSwitch('text')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               mode === 'text'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#B8FF00] text-[#222222] shadow-sm'
+                : 'text-[#A0A0A0] hover:text-white'
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
@@ -190,8 +190,8 @@ export const InterviewRoomPage = () => {
             onClick={() => handleModeSwitch('voice')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               mode === 'voice'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#B8FF00] text-[#222222] shadow-sm'
+                : 'text-[#A0A0A0] hover:text-white'
             }`}
           >
             <Mic className="w-3.5 h-3.5" />
@@ -204,7 +204,7 @@ export const InterviewRoomPage = () => {
           type="button"
           onClick={handleFinishEarly}
           disabled={!!processingStatus}
-          className="text-xs text-slate-400 hover:text-rose-400 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-surface-850 transition-colors cursor-pointer"
+          className="text-xs text-[#A0A0A0] hover:text-rose-400 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#2A2A2A] transition-colors cursor-pointer"
         >
           <Flag className="w-3.5 h-3.5" />
           Conclude Interview
@@ -237,12 +237,12 @@ export const InterviewRoomPage = () => {
 
       {/* Display last voice transcript if available */}
       {lastVoiceTranscript && (
-        <div className="p-4 rounded-2xl bg-surface-900/90 border border-slate-800">
-          <div className="flex items-center gap-2 text-xs font-semibold text-indigo-400 mb-1">
+        <div className="p-4 rounded-2xl bg-[#222222] border border-[#333333]">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#B8FF00] mb-1">
             <Mic className="w-3.5 h-3.5" />
             Transcribed Voice Answer:
           </div>
-          <p className="text-xs text-slate-300 italic font-mono leading-relaxed">
+          <p className="text-xs text-[#D0D0D0] italic font-mono leading-relaxed">
             "{lastVoiceTranscript}"
           </p>
         </div>
@@ -257,11 +257,11 @@ export const InterviewRoomPage = () => {
           {mode === 'text' ? (
             <Card className="space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
+                <label className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-[#B8FF00]" />
                   Your Answer
                 </label>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-[#A0A0A0]">
                   Be specific, mention trade-offs, and reference real examples
                 </span>
               </div>
@@ -271,11 +271,11 @@ export const InterviewRoomPage = () => {
                 value={textAnswer}
                 onChange={(e) => setTextAnswer(e.target.value)}
                 placeholder="Type your detailed answer here... (e.g., how you solved the problem, technical reasons, architectural trade-offs, metrics, or lessons learned)"
-                className="w-full p-4 bg-surface-950 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-xs sm:text-sm leading-relaxed"
+                className="w-full p-4 bg-[#181818] border border-[#5F5F5F]/40 rounded-2xl text-white placeholder-[#A0A0A0]/60 focus:outline-none focus:ring-2 focus:ring-[#B8FF00]/40 focus:border-[#B8FF00] text-xs sm:text-sm leading-relaxed"
               />
 
               <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-[#A0A0A0] font-mono">
                   {textAnswer.trim().split(/\s+/).filter(Boolean).length} words
                 </span>
                 <Button

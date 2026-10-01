@@ -11,8 +11,8 @@ export const ProtectedRoute = ({ children }) => {
     return (
       <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-          <span className="text-sm text-slate-400">Loading InterviewCoach AI...</span>
+          <Loader2 className="w-8 h-8 text-[#B8FF00] animate-spin" />
+          <span className="text-sm text-[#A0A0A0]">Loading InterviewCoach AI...</span>
         </div>
       </div>
     );

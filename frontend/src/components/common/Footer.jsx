@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, ExternalLink } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 const GithubIcon = ({ className = "w-3.5 h-3.5" }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
@@ -7,7 +7,7 @@ const GithubIcon = ({ className = "w-3.5 h-3.5" }) => (
   </svg>
 );
 
-const LinkedinIcon = ({ className = "w-3.5 h-3.5 text-sky-400" }) => (
+const LinkedinIcon = ({ className = "w-3.5 h-3.5 text-[#B8FF00]" }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
     <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
   </svg>
@@ -15,33 +15,33 @@ const LinkedinIcon = ({ className = "w-3.5 h-3.5 text-sky-400" }) => (
 
 export const Footer = () => {
   return (
-    <footer className="border-t border-slate-800/80 bg-[#070b14] text-slate-400 py-10 mt-auto">
+    <footer className="border-t border-[#333333] bg-[#222222] text-[#A0A0A0] py-10 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Brand & Mission */}
           <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
             <div className="flex items-center space-x-2.5">
-              <div className="w-7 h-7 rounded-lg bg-indigo-600/90 flex items-center justify-center shadow-sm">
-                <Sparkles className="w-4 h-4 text-white" />
+              <div className="w-7 h-7 rounded-lg bg-[#B8FF00] flex items-center justify-center shadow-sm">
+                <Sparkles className="w-4 h-4 text-[#222222]" />
               </div>
-              <span className="text-sm font-semibold text-white tracking-tight">InterviewCoach AI</span>
+              <span className="text-sm font-bold text-white tracking-tight">InterviewCoach AI</span>
             </div>
-            <span className="hidden sm:inline text-slate-700">|</span>
-            <p className="text-xs text-slate-500">
+            <span className="hidden sm:inline text-[#5F5F5F]">|</span>
+            <p className="text-xs text-[#A0A0A0]">
               Practice smarter. Interview better. Production-grade AI mock interviews.
             </p>
           </div>
 
           {/* Creator Attribution & Links */}
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
-            <span className="text-slate-500">
-              Built by <span className="text-slate-200 font-medium">Sanesh Kumar</span>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-[#A0A0A0]">
+            <span className="text-[#A0A0A0]">
+              Built by <span className="text-white font-semibold">Sanesh Kumar</span>
             </span>
             <a
               href="https://github.com/Sanesh764/interviewCoach"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-900 border border-slate-800 hover:border-slate-700 hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2A2A2A] border border-[#444444] text-white hover:border-[#B8FF00] hover:text-[#B8FF00] transition-colors"
             >
               <GithubIcon className="w-3.5 h-3.5" />
               <span>GitHub</span>
@@ -50,19 +50,19 @@ export const Footer = () => {
               href="https://www.linkedin.com/in/sanesh7644/"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-900 border border-slate-800 hover:border-slate-700 hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2A2A2A] border border-[#444444] text-white hover:border-[#B8FF00] hover:text-[#B8FF00] transition-colors"
             >
-              <LinkedinIcon className="w-3.5 h-3.5 text-sky-400" />
+              <LinkedinIcon className="w-3.5 h-3.5 text-[#B8FF00]" />
               <span>LinkedIn</span>
             </a>
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-600">
+        <div className="mt-8 pt-6 border-t border-[#333333] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#A0A0A0]">
           <div>
             Powered by Amazon Bedrock (Claude 3 Haiku) • AWS Polly Neural • AWS Transcribe • Amazon S3
           </div>
-          <div className="flex items-center gap-4 text-slate-500">
+          <div className="flex items-center gap-4 text-[#A0A0A0]">
             <span>© {new Date().getFullYear()} InterviewCoach AI. All rights reserved.</span>
           </div>
         </div>
@@ -70,4 +70,3 @@ export const Footer = () => {
     </footer>
   );
 };
-
