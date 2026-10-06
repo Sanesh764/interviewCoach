@@ -28,9 +28,32 @@ const interviewSchema = new mongoose.Schema(
       enum: ['friendly', 'professional', 'strict'],
       default: 'professional',
     },
+    interviewType: {
+      type: String,
+      enum: ['question_count', 'timed'],
+      default: 'question_count',
+    },
     totalQuestionsTarget: {
       type: Number,
       default: 5,
+    },
+    durationMinutes: {
+      type: Number,
+      enum: [10, 20, 30, null],
+      default: null,
+    },
+    startedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    expiresAt: {
+      type: Date,
+      default: null,
+    },
+    completionReason: {
+      type: String,
+      enum: ['questions_completed', 'time_expired', 'user_ended', 'system_error'],
+      default: 'questions_completed',
     },
     currentQuestionIndex: {
       type: Number,

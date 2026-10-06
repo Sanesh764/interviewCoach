@@ -13,7 +13,9 @@ export const createInterview = async (req, res, next) => {
       experienceLevel,
       mode,
       personality,
+      interviewType,
       totalQuestionsTarget,
+      durationMinutes,
       jobDescription,
       resumeData,
     } = req.body;
@@ -22,13 +24,34 @@ export const createInterview = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Role is required' });
     }
 
+    const resolvedType =
+      interviewType === 'timed' || (durationMinutes && !totalQuestionsTarget)
+        ? 'timed'
+        : 'question_count';
+    let validatedTarget = null;
+    let validatedDuration = null;
+
+    if (resolvedType === 'timed') {
+      const validDurations = [10, 20, 30];
+      const parsedDuration = Number(durationMinutes);
+      validatedDuration = validDurations.includes(parsedDuration) ? parsedDuration : 20;
+      validatedTarget = null; // No question limit in timed mode
+    } else {
+      const validTargets = [5, 7, 10];
+      const parsedTarget = Number(totalQuestionsTarget);
+      validatedTarget = validTargets.includes(parsedTarget) ? parsedTarget : 5;
+      validatedDuration = null;
+    }
+
     const session = await interviewEngine.startInterview({
       userId: req.user.id,
       role,
       experienceLevel: experienceLevel || 'Fresher',
       mode: mode || 'text',
       personality: personality || 'professional',
-      totalQuestionsTarget: totalQuestionsTarget || 5,
+      interviewType: resolvedType,
+      totalQuestionsTarget: validatedTarget,
+      durationMinutes: validatedDuration,
       jobDescription: jobDescription || '',
       resumeData: resumeData || null,
     });
@@ -50,13 +73,25 @@ export const createInterview = async (req, res, next) => {
 // @access  Private
 export const getInterview = async (req, res, next) => {
   try {
-    const interview = await Interview.findOne({
+    let interview = await Interview.findOne({
       _id: req.params.id,
       userId: req.user.id, // Enforce user isolation
     }).populate('questions');
 
     if (!interview) {
       return res.status(404).json({ success: false, message: 'Interview session not found' });
+    }
+
+    // Server-authoritative expiration check on retrieval (strictly for timed mode)
+    if (
+      interview.status === 'in_progress' &&
+      interview.interviewType === 'timed' &&
+      interview.expiresAt &&
+      new Date() >= new Date(interview.expiresAt)
+    ) {
+      console.log(`[InterviewController] Timed interview ${interview._id} expired on fetch. Finalizing session.`);
+      const completedSession = await interviewEngine.completeInterview(interview._id, 'time_expired');
+      interview = completedSession.interview;
     }
 
     // Current active question is the last question in the sequence
@@ -190,6 +225,7 @@ export const switchMode = async (req, res, next) => {
 // @access  Private
 export const completeInterview = async (req, res, next) => {
   try {
+    const { reason } = req.body || {};
     const interview = await Interview.findOne({
       _id: req.params.id,
       userId: req.user.id,
@@ -199,7 +235,12 @@ export const completeInterview = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Interview session not found' });
     }
 
-    const result = await interviewEngine.completeInterview(req.params.id);
+    let finalReason = reason === 'time_expired' ? 'time_expired' : 'user_ended';
+    if (interview.interviewType === 'timed' && interview.expiresAt && new Date() >= new Date(interview.expiresAt)) {
+      finalReason = 'time_expired';
+    }
+
+    const result = await interviewEngine.completeInterview(req.params.id, finalReason);
 
     res.status(200).json({
       success: true,

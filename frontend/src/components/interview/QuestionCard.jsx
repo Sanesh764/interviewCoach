@@ -39,7 +39,7 @@ export const QuestionCard = ({
               </span>
             </div>
             <p className="text-xs text-[#A0A0A0] font-mono mt-0.5">
-              Question {questionNumber} of {totalQuestions}
+              {totalQuestions ? `Question ${questionNumber} of ${totalQuestions}` : `Question ${questionNumber} (Timed Mode)`}
             </p>
           </div>
         </div>

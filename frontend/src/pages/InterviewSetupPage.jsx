@@ -16,6 +16,8 @@ import {
   HelpCircle,
   ArrowRight,
   Loader2,
+  Clock,
+  Sparkles,
   X
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
@@ -50,7 +52,9 @@ export const InterviewSetupPage = () => {
   const [experienceLevel, setExperienceLevel] = useState('Fresher');
   const [mode, setMode] = useState('text');
   const [personality, setPersonality] = useState('professional');
+  const [interviewType, setInterviewType] = useState('question_count'); // 'question_count' | 'timed'
   const [totalQuestionsTarget, setTotalQuestionsTarget] = useState(5);
+  const [durationMinutes, setDurationMinutes] = useState(20);
   const [jobDescription, setJobDescription] = useState('');
 
   // Resume states
@@ -128,12 +132,15 @@ export const InterviewSetupPage = () => {
     setIsSubmitting(true);
 
     try {
+      const isTimed = interviewType === 'timed';
       const response = await interviewService.createInterview({
         role: targetRole,
         experienceLevel,
         mode,
         personality,
-        totalQuestionsTarget: Number(totalQuestionsTarget),
+        interviewType,
+        totalQuestionsTarget: isTimed ? null : Number(totalQuestionsTarget),
+        durationMinutes: isTimed ? Number(durationMinutes) : null,
         jobDescription: jobDescription.trim(),
         resumeData: resumeData || null,
       });
@@ -460,30 +467,110 @@ export const InterviewSetupPage = () => {
           />
         </Card>
 
-        {/* 7. Question Count Target */}
-        <Card className="space-y-3">
+        {/* 7. Interview Format: Question Count vs Timed */}
+        <Card className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="text-sm font-bold text-white flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-[#B8FF00]" />
-              7. Number of Questions
+              <Sparkles className="w-4 h-4 text-[#B8FF00]" />
+              7. Interview Format
             </label>
+            <span className="text-[11px] text-[#A0A0A0]">Select session pacing rule</span>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            {[5, 7, 10].map((count) => (
-              <button
-                type="button"
-                key={count}
-                onClick={() => setTotalQuestionsTarget(count)}
-                className={`py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  totalQuestionsTarget === count
-                    ? 'bg-[#B8FF00] text-[#222222] shadow-md shadow-[#B8FF00]/15'
-                    : 'bg-[#181818] text-[#D0D0D0] hover:bg-[#2A2A2A] border border-[#383838]'
-                }`}
-              >
-                {count} Questions
-              </button>
-            ))}
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setInterviewType('question_count')}
+              className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                interviewType === 'question_count'
+                  ? 'border-[#B8FF00] bg-[#B8FF00]/10 ring-1 ring-[#B8FF00]/40'
+                  : 'border-[#333333] bg-[#181818] hover:bg-[#2A2A2A]'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <HelpCircle className={`w-5 h-5 ${interviewType === 'question_count' ? 'text-[#B8FF00]' : 'text-[#A0A0A0]'}`} />
+                {interviewType === 'question_count' && <CheckCircle2 className="w-4 h-4 text-[#B8FF00]" />}
+              </div>
+              <div>
+                <h6 className="text-xs font-bold text-white">Question Count Mode</h6>
+                <p className="text-[11px] text-[#A0A0A0] mt-0.5">Fixed question limit (5, 7, 10)</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setInterviewType('timed')}
+              className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                interviewType === 'timed'
+                  ? 'border-[#B8FF00] bg-[#B8FF00]/10 ring-1 ring-[#B8FF00]/40'
+                  : 'border-[#333333] bg-[#181818] hover:bg-[#2A2A2A]'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <Clock className={`w-5 h-5 ${interviewType === 'timed' ? 'text-[#B8FF00]' : 'text-[#A0A0A0]'}`} />
+                {interviewType === 'timed' && <CheckCircle2 className="w-4 h-4 text-[#B8FF00]" />}
+              </div>
+              <div>
+                <h6 className="text-xs font-bold text-white">Timed Interview Mode</h6>
+                <p className="text-[11px] text-[#A0A0A0] mt-0.5">Unlimited questions within duration</p>
+              </div>
+            </button>
           </div>
+
+          {/* Conditional sub-configuration */}
+          {interviewType === 'question_count' ? (
+            <div className="pt-2 border-t border-[#333333] space-y-2.5">
+              <label className="text-xs font-bold text-[#D0D0D0] flex items-center gap-1.5">
+                <HelpCircle className="w-3.5 h-3.5 text-[#B8FF00]" />
+                Number of Questions:
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {[5, 7, 10].map((count) => (
+                  <button
+                    type="button"
+                    key={count}
+                    onClick={() => setTotalQuestionsTarget(count)}
+                    className={`py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      totalQuestionsTarget === count
+                        ? 'bg-[#B8FF00] text-[#222222] shadow-md shadow-[#B8FF00]/15'
+                        : 'bg-[#181818] text-[#D0D0D0] hover:bg-[#2A2A2A] border border-[#383838]'
+                    }`}
+                  >
+                    {count} Questions
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-[#A0A0A0]">
+                Interview concludes strictly after Question {totalQuestionsTarget} is answered.
+              </p>
+            </div>
+          ) : (
+            <div className="pt-2 border-t border-[#333333] space-y-2.5">
+              <label className="text-xs font-bold text-[#D0D0D0] flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-[#B8FF00]" />
+                Interview Duration:
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {[10, 20, 30].map((mins) => (
+                  <button
+                    type="button"
+                    key={mins}
+                    onClick={() => setDurationMinutes(mins)}
+                    className={`py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      durationMinutes === mins
+                        ? 'bg-[#B8FF00] text-[#222222] shadow-md shadow-[#B8FF00]/15'
+                        : 'bg-[#181818] text-[#D0D0D0] hover:bg-[#2A2A2A] border border-[#383838]'
+                    }`}
+                  >
+                    {mins} Minutes
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-[#A0A0A0]">
+                NO question limit. The AI will continue presenting questions dynamically until the {durationMinutes}-minute countdown finishes.
+              </p>
+            </div>
+          )}
         </Card>
 
         {/* Submit */}

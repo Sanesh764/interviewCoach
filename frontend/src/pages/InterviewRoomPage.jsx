@@ -7,7 +7,9 @@ import {
   Send,
   AlertCircle,
   Flag,
-  Sparkles
+  Sparkles,
+  Clock,
+  HelpCircle
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
@@ -28,6 +30,8 @@ export const InterviewRoomPage = () => {
   const [processingStatus, setProcessingStatus] = useState(null); // 'transcribing' | 'evaluating' | 'generating' | 'finishing'
   const [error, setError] = useState('');
   const [lastVoiceTranscript, setLastVoiceTranscript] = useState('');
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [isExpired, setIsExpired] = useState(false);
 
   // Fetch initial session
   useEffect(() => {
@@ -59,6 +63,59 @@ export const InterviewRoomPage = () => {
     fetchSession();
   }, [id, navigate]);
 
+  // Handle server-authoritative timer expiration
+  const handleTimeExpired = async () => {
+    if (isExpired) return;
+    setIsExpired(true);
+    setProcessingStatus('finishing');
+    setError('Interview duration limit has expired. Finalizing interview and compiling diagnostic report...');
+
+    try {
+      await interviewService.completeInterview(id, 'time_expired');
+      navigate(`/interview/report/${id}`);
+    } catch (err) {
+      console.error('[Time Expired Auto-Complete Error]', err);
+      navigate(`/interview/report/${id}`);
+    }
+  };
+
+  // Server-authoritative timer countdown (resilient to refresh, navigation, and reconnect)
+  useEffect(() => {
+    if (!interview?.expiresAt || interview?.status === 'completed' || isExpired) return;
+
+    const calculateRemaining = () => {
+      const remainingMs = new Date(interview.expiresAt).getTime() - Date.now();
+      return Math.max(0, Math.floor(remainingMs / 1000));
+    };
+
+    const initial = calculateRemaining();
+    setTimeLeft(initial);
+
+    if (initial <= 0) {
+      handleTimeExpired();
+      return;
+    }
+
+    const timerInterval = setInterval(() => {
+      const remaining = calculateRemaining();
+      setTimeLeft(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        handleTimeExpired();
+      }
+    }, 1000);
+
+    return () => clearInterval(timerInterval);
+  }, [interview?.expiresAt, interview?.status, isExpired]);
+
+  const formatTimer = (seconds) => {
+    if (seconds === null || seconds === undefined) return '--:--';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
   // Mode switcher (Text <-> Voice mid-interview)
   const handleModeSwitch = async (newMode) => {
     if (newMode === mode) return;
@@ -73,7 +130,11 @@ export const InterviewRoomPage = () => {
   // Submit Text Answer
   const handleTextSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (processingStatus) return;
+    if (processingStatus || isExpired) return;
+    if (timeLeft !== null && timeLeft <= 0) {
+      handleTimeExpired();
+      return;
+    }
     if (!textAnswer.trim()) {
       setError('Please type your answer before submitting.');
       return;
@@ -104,7 +165,11 @@ export const InterviewRoomPage = () => {
 
   // Submit Voice Answer
   const handleVoiceSubmit = async (audioBlob) => {
-    if (processingStatus) return;
+    if (processingStatus || isExpired) return;
+    if (timeLeft !== null && timeLeft <= 0) {
+      handleTimeExpired();
+      return;
+    }
     setError('');
     setProcessingStatus('transcribing');
 
@@ -135,12 +200,13 @@ export const InterviewRoomPage = () => {
 
   // Conclude interview early
   const handleFinishEarly = async () => {
+    if (isExpired) return;
     if (!window.confirm('Are you sure you want to conclude the interview and generate your report now?')) {
       return;
     }
     setProcessingStatus('finishing');
     try {
-      await interviewService.completeInterview(id);
+      await interviewService.completeInterview(id, 'user_ended');
       navigate(`/interview/report/${id}`);
     } catch (err) {
       console.error('[Finish Early Error]', err);
@@ -171,44 +237,80 @@ export const InterviewRoomPage = () => {
           </div>
         </div>
 
-        {/* Mode Switcher Toggle */}
-        <div className="flex items-center space-x-1.5 bg-[#181818] p-1 rounded-xl border border-[#333333]">
+        {/* Session Limit Indicator: Timed Mode vs Question Count Mode */}
+        {interview?.interviewType === 'timed' ? (
+          <div
+            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-xl border font-mono font-bold text-xs sm:text-sm transition-all ${
+              timeLeft !== null && timeLeft <= 60
+                ? 'bg-rose-500/20 border-rose-500 text-rose-300 animate-pulse shadow-md shadow-rose-500/20'
+                : 'bg-[#181818] border-[#333333] text-white'
+            }`}
+            title={`${interview?.durationMinutes || 20}-minute timed session`}
+          >
+            <Clock className={`w-4 h-4 ${timeLeft !== null && timeLeft <= 60 ? 'text-rose-400' : 'text-[#B8FF00]'}`} />
+            <span className="text-[11px] text-[#A0A0A0] font-sans font-medium uppercase tracking-wider hidden sm:inline">
+              Time Remaining:
+            </span>
+            <span>{formatTimer(timeLeft)}</span>
+            {timeLeft !== null && timeLeft <= 60 && (
+              <span className="text-[10px] text-rose-400 font-sans font-semibold tracking-wide hidden sm:inline uppercase">
+                Ending Soon
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl border border-[#333333] bg-[#181818] font-mono text-xs sm:text-sm text-white">
+            <HelpCircle className="w-4 h-4 text-[#B8FF00]" />
+            <span className="text-[11px] text-[#A0A0A0] font-sans font-medium uppercase tracking-wider hidden sm:inline">
+              Target:
+            </span>
+            <span>{interview?.totalQuestionsTarget || 5} Questions</span>
+          </div>
+        )}
+
+        {/* Right Controls: Mode Switcher & Conclude */}
+        <div className="flex items-center space-x-3">
+          {/* Mode Switcher Toggle */}
+          <div className="flex items-center space-x-1.5 bg-[#181818] p-1 rounded-xl border border-[#333333]">
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('text')}
+              disabled={isExpired || !!processingStatus}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                mode === 'text'
+                  ? 'bg-[#B8FF00] text-[#222222] shadow-sm'
+                  : 'text-[#A0A0A0] hover:text-white'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              Text
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('voice')}
+              disabled={isExpired || !!processingStatus}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                mode === 'voice'
+                  ? 'bg-[#B8FF00] text-[#222222] shadow-sm'
+                  : 'text-[#A0A0A0] hover:text-white'
+              }`}
+            >
+              <Mic className="w-3.5 h-3.5" />
+              Voice
+            </button>
+          </div>
+
+          {/* Conclude early button */}
           <button
             type="button"
-            onClick={() => handleModeSwitch('text')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-              mode === 'text'
-                ? 'bg-[#B8FF00] text-[#222222] shadow-sm'
-                : 'text-[#A0A0A0] hover:text-white'
-            }`}
+            onClick={handleFinishEarly}
+            disabled={!!processingStatus || isExpired}
+            className="text-xs text-[#A0A0A0] hover:text-rose-400 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#2A2A2A] transition-colors cursor-pointer"
           >
-            <MessageSquare className="w-3.5 h-3.5" />
-            Text
-          </button>
-          <button
-            type="button"
-            onClick={() => handleModeSwitch('voice')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-              mode === 'voice'
-                ? 'bg-[#B8FF00] text-[#222222] shadow-sm'
-                : 'text-[#A0A0A0] hover:text-white'
-            }`}
-          >
-            <Mic className="w-3.5 h-3.5" />
-            Voice
+            <Flag className="w-3.5 h-3.5" />
+            Conclude
           </button>
         </div>
-
-        {/* Conclude early button */}
-        <button
-          type="button"
-          onClick={handleFinishEarly}
-          disabled={!!processingStatus}
-          className="text-xs text-[#A0A0A0] hover:text-rose-400 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#2A2A2A] transition-colors cursor-pointer"
-        >
-          <Flag className="w-3.5 h-3.5" />
-          Conclude Interview
-        </button>
       </div>
 
       {/* Error Message if any */}
@@ -226,7 +328,7 @@ export const InterviewRoomPage = () => {
       {currentQuestion && (
         <QuestionCard
           questionNumber={interview?.currentQuestionIndex || 1}
-          totalQuestions={interview?.totalQuestionsTarget || 5}
+          totalQuestions={interview?.interviewType === 'timed' ? null : (interview?.totalQuestionsTarget || 5)}
           question={currentQuestion.question}
           category={currentQuestion.category}
           personality={interview?.personality}

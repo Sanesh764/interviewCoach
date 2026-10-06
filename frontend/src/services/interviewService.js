@@ -38,8 +38,8 @@ export const interviewService = {
   },
 
   // Complete interview session and generate final report
-  completeInterview: async (id) => {
-    const response = await API.post(`/interviews/${id}/complete`);
+  completeInterview: async (id, reason = 'user_ended') => {
+    const response = await API.post(`/interviews/${id}/complete`, { reason });
     return response.data;
   },
 

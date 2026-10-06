@@ -16,7 +16,8 @@ import {
   RotateCcw,
   Mic,
   MessageSquare,
-  ArrowRight
+  ArrowRight,
+  Clock
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
@@ -91,6 +92,31 @@ export const InterviewReportPage = () => {
             <span className="flex items-center gap-1">
               {interview.mode === 'voice' ? <Mic className="w-3.5 h-3.5 text-[#B8FF00]" /> : <MessageSquare className="w-3.5 h-3.5 text-[#B8FF00]" />}
               {interview.mode === 'voice' ? 'Voice Mode' : 'Text Mode'}
+            </span>
+            <span>•</span>
+            {interview.interviewType === 'timed' ? (
+              <span className="flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-[#B8FF00]" />
+                Timed Interview ({interview.durationMinutes || 20}m limit)
+              </span>
+            ) : (
+              <span>
+                Question Count Mode ({interview.totalQuestionsTarget || 5} Questions)
+              </span>
+            )}
+            <span>•</span>
+            <span>
+              {interview.completionReason === 'time_expired' ? (
+                <span className="text-amber-400 font-semibold">
+                  Concluded by Time Limit ({questions?.filter((q) => q.answer || q.transcript).length || 0} questions completed)
+                </span>
+              ) : interview.completionReason === 'user_ended' ? (
+                <span className="text-sky-400 font-semibold">Concluded Early by Candidate</span>
+              ) : (
+                <span className="text-[#B8FF00] font-semibold">
+                  All {interview.totalQuestionsTarget || 5} Questions Completed
+                </span>
+              )}
             </span>
             <span>•</span>
             <span>Completed on {new Date(interview.completedAt || interview.updatedAt).toLocaleDateString()}</span>

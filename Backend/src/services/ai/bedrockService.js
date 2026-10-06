@@ -491,12 +491,16 @@ export const generateInterviewQuestion = async ({
   const hasJD = !!(jobDescription && jobDescription.trim());
   const compactJD = hasJD ? jobDescription.trim().substring(0, 800) : '';
 
+  const progressText = totalQuestions
+    ? `Question ${questionNumber} of ${totalQuestions}`
+    : `Question ${questionNumber} (Timed Interview Mode — no question limit)`;
+
   const prompt = `You are an expert interviewer conducting a job interview.
 Interview Context:
 - Target Role: ${role}
 - Experience Level: ${experienceLevel}
 - Interviewer Personality: ${personality} (${personalityInstructions[personality] || personalityInstructions.professional})
-- Progress: Question ${questionNumber} of ${totalQuestions}
+- Progress: ${progressText}
 
 ${
   resumeData
@@ -604,7 +608,11 @@ export const processAnswerUnified = async ({
     advanced: 'Target complex edge cases, architectural trade-offs, scalability, and deep system design.',
   };
 
-  const isGenuinelyFinal = isLastQuestion || currentQuestionNumber >= totalQuestions;
+  const isGenuinelyFinal = isLastQuestion || (totalQuestions ? currentQuestionNumber >= totalQuestions : false);
+
+  const progressText = totalQuestions
+    ? `Question ${currentQuestionNumber} of ${totalQuestions}`
+    : `Question ${currentQuestionNumber} (Timed Interview Mode — no question limit)`;
 
   const prompt = `You are an expert ${role} interviewer with a ${personality} style (${personalityInstructions[personality] || personalityInstructions.professional}).
 The candidate is at ${experienceLevel} level.
@@ -616,15 +624,15 @@ ${!isGenuinelyFinal ? `CONTEXT FOR NEXT QUESTION:
 - Resume key skills: ${resumeSkills.slice(0, 8).join(', ') || 'General role skills'}
 - Target Job context: ${jobDescriptionContext.substring(0, 200) || 'Standard requirements'}
 - Previous topics covered: ${previousTopics.slice(-3).join('; ') || 'None'}
-- Interview Progress: Question ${currentQuestionNumber} of ${totalQuestions}
-- Adaptive Difficulty Target: ${difficultyLevel.toUpperCase()} (${difficultyGuidance[difficultyLevel] || difficultyGuidance.balanced})` : `NOTE: Question ${currentQuestionNumber} of ${totalQuestions} is the FINAL question of this interview session.`}
+- Interview Progress: ${progressText}
+- Adaptive Difficulty Target: ${difficultyLevel.toUpperCase()} (${difficultyGuidance[difficultyLevel] || difficultyGuidance.balanced})` : `NOTE: ${progressText} is the FINAL question of this interview session.`}
 
 TASK:
 1. Evaluate the candidate's answer objectively with 0-10 criteria and 0-100 category scores.
-${!isGenuinelyFinal ? `2. THIS IS NOT THE FINAL QUESTION (Question ${currentQuestionNumber} of ${totalQuestions}).
+${!isGenuinelyFinal ? `2. THIS IS NOT THE FINAL QUESTION (${progressText}).
    - You MUST generate the next question. "nextQuestion" MUST NOT be null or omitted.
    - If the candidate's answer was incomplete or missed trade-offs, set shouldFollowUp = true and craft an intelligent follow-up question in "nextQuestion".
-   - Otherwise, set shouldFollowUp = false and craft the next logical interview question covering a different topic in "nextQuestion", aligned to the Adaptive Difficulty Target (${difficultyLevel}).` : `2. THIS IS THE FINAL QUESTION (Question ${currentQuestionNumber} of ${totalQuestions}).
+   - Otherwise, set shouldFollowUp = false and craft the next logical interview question covering a different topic in "nextQuestion", aligned to the Adaptive Difficulty Target (${difficultyLevel}).` : `2. THIS IS THE FINAL QUESTION (${progressText}).
    - You MUST set "nextQuestion" to null.
    - You MUST set "shouldFollowUp" to false.`}
 
