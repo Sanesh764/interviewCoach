@@ -197,13 +197,53 @@ export const interviewEngine = {
       interview.modelsUsed.push(modelUsed);
     }
 
-    // 3. If this was the final question, conclude interview
-    if (isLastQuestion || !combinedResult.nextQuestion) {
+    // 3. Conclude interview ONLY when the authoritative target question count has been reached
+    if (isLastQuestion) {
       return await interviewEngine.completeInterview(interviewId);
     }
 
-    const nextQuestionData = combinedResult.nextQuestion;
-    const isFollowUp = combinedResult.shouldFollowUp || false;
+    let nextQuestionData = combinedResult.nextQuestion;
+    let isFollowUp = combinedResult.shouldFollowUp || false;
+
+    // Safety fallback: If AI returned null or missing nextQuestion while currentCount < targetCount,
+    // generate the next question using aiProvider.generateInterviewQuestion so the session NEVER ends early
+    if (!nextQuestionData || !nextQuestionData.question || typeof nextQuestionData.question !== 'string') {
+      console.warn(
+        `[InterviewEngine] nextQuestion missing from processAnswerUnified at question ${currentCount}/${targetCount}. Generating fallback question...`
+      );
+      try {
+        const fallbackGenerated = await aiProvider.generateInterviewQuestion({
+          role: interview.role,
+          experienceLevel: interview.experienceLevel,
+          personality: interview.personality,
+          resumeData: interview.resumeData,
+          jobDescriptionAnalysis: interview.jobDescriptionAnalysis,
+          questionNumber: currentCount + 1,
+          totalQuestions: targetCount,
+          previousQAs: interview.questions,
+        });
+
+        if (fallbackGenerated && fallbackGenerated.question) {
+          nextQuestionData = {
+            question: fallbackGenerated.question,
+            category: fallbackGenerated.category || 'Technical',
+          };
+          isFollowUp = false;
+        }
+      } catch (fallbackErr) {
+        console.error('[InterviewEngine] Fallback question generation failed:', fallbackErr.message);
+      }
+    }
+
+    // Ultimate safeguard: If fallback generation was unable to provide question text,
+    // provide a contextual role question so the interview strictly continues toward targetCount
+    if (!nextQuestionData || !nextQuestionData.question) {
+      nextQuestionData = {
+        question: `Could you describe an example of how you apply core ${interview.role} engineering principles and trade-off considerations in your technical projects?`,
+        category: 'Technical',
+      };
+      isFollowUp = false;
+    }
 
     // 4. Generate Polly audio for next question if in voice mode
     let aiSpeechAudioUrl = '';

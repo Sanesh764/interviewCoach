@@ -604,25 +604,29 @@ export const processAnswerUnified = async ({
     advanced: 'Target complex edge cases, architectural trade-offs, scalability, and deep system design.',
   };
 
+  const isGenuinelyFinal = isLastQuestion || currentQuestionNumber >= totalQuestions;
+
   const prompt = `You are an expert ${role} interviewer with a ${personality} style (${personalityInstructions[personality] || personalityInstructions.professional}).
 The candidate is at ${experienceLevel} level.
 
 CURRENT QUESTION: "${question}"
 CANDIDATE ANSWER: "${answer}"
 
-${!isLastQuestion ? `CONTEXT FOR NEXT QUESTION:
+${!isGenuinelyFinal ? `CONTEXT FOR NEXT QUESTION:
 - Resume key skills: ${resumeSkills.slice(0, 8).join(', ') || 'General role skills'}
 - Target Job context: ${jobDescriptionContext.substring(0, 200) || 'Standard requirements'}
 - Previous topics covered: ${previousTopics.slice(-3).join('; ') || 'None'}
 - Interview Progress: Question ${currentQuestionNumber} of ${totalQuestions}
-- Adaptive Difficulty Target: ${difficultyLevel.toUpperCase()} (${difficultyGuidance[difficultyLevel] || difficultyGuidance.balanced})` : 'NOTE: This was the final question of the interview.'}
+- Adaptive Difficulty Target: ${difficultyLevel.toUpperCase()} (${difficultyGuidance[difficultyLevel] || difficultyGuidance.balanced})` : `NOTE: Question ${currentQuestionNumber} of ${totalQuestions} is the FINAL question of this interview session.`}
 
 TASK:
 1. Evaluate the candidate's answer objectively with 0-10 criteria and 0-100 category scores.
-2. If NOT the final question:
-   - If the candidate's answer was incomplete or missed trade-offs, set shouldFollowUp = true and craft an intelligent follow-up question.
-   - Otherwise, set shouldFollowUp = false and craft the next logical interview question covering a different topic, aligned to the Adaptive Difficulty Target (${difficultyLevel}).
-3. If this IS the final question: set nextQuestion to null and shouldFollowUp to false.
+${!isGenuinelyFinal ? `2. THIS IS NOT THE FINAL QUESTION (Question ${currentQuestionNumber} of ${totalQuestions}).
+   - You MUST generate the next question. "nextQuestion" MUST NOT be null or omitted.
+   - If the candidate's answer was incomplete or missed trade-offs, set shouldFollowUp = true and craft an intelligent follow-up question in "nextQuestion".
+   - Otherwise, set shouldFollowUp = false and craft the next logical interview question covering a different topic in "nextQuestion", aligned to the Adaptive Difficulty Target (${difficultyLevel}).` : `2. THIS IS THE FINAL QUESTION (Question ${currentQuestionNumber} of ${totalQuestions}).
+   - You MUST set "nextQuestion" to null.
+   - You MUST set "shouldFollowUp" to false.`}
 
 Return ONLY a valid JSON object in this exact schema:
 {
@@ -646,7 +650,7 @@ Return ONLY a valid JSON object in this exact schema:
   "missingPoints": ["Omitted error handling and edge cases"],
   "betterAnswer": "Concise model answer demonstrating optimal technical depth...",
   "shouldFollowUp": false,
-  "nextQuestion": ${!isLastQuestion ? `{
+  "nextQuestion": ${!isGenuinelyFinal ? `{
     "question": "The next question or follow-up question text",
     "category": "Technical"
   }` : `null`}
@@ -662,6 +666,14 @@ Return ONLY a valid JSON object in this exact schema:
     (data) => {
       if (!data.evaluation || typeof data.evaluation !== 'object') return 'Missing "evaluation" object';
       if (!data.scores || typeof data.scores !== 'object') return 'Missing "scores" object';
+      if (!isGenuinelyFinal) {
+        if (!data.nextQuestion || typeof data.nextQuestion !== 'object') {
+          return 'Missing or null "nextQuestion" object when interview is still in progress';
+        }
+        if (!data.nextQuestion.question || typeof data.nextQuestion.question !== 'string' || !data.nextQuestion.question.trim()) {
+          return 'Missing or empty "nextQuestion.question" string when interview is still in progress';
+        }
+      }
       return null;
     }
   );
